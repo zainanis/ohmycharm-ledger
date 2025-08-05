@@ -14,4 +14,4 @@ router.post("/", createExpense);
 router.put("/:id", updateExpenseById);
 router.delete("/:id", deleteExpenseById);
 
-module.exports = { router };
+module.exports = router;

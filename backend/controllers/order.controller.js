@@ -28,18 +28,20 @@ const createOrder = async (req, res) => {
       return res.status(400).json("No products provided for the order.");
     }
     session.startTransaction();
-    const newOrder = await Order.create(
-      {
-        customerId,
-        status,
-        orderDate,
-        sentDate,
-        recieveDate,
-        totalAmount: 0,
-      },
+    const [newOrder] = await Order.create(
+      [
+        {
+          customerId,
+          status,
+          orderDate,
+          sentDate,
+          recieveDate,
+          totalAmount: 0,
+        },
+      ],
       { session }
     );
-
+    console.log("order created");
     let totalAmount = 0;
     const prodOrderDocs = [];
 
@@ -48,31 +50,39 @@ const createOrder = async (req, res) => {
 
       if (!product) return res.status(404).json("prodcut does not exists");
 
-      const newprodorder = await ProdOrder.create(
-        {
-          productId: product._id,
-          orderId: newOrder._id,
-          quantity: item.quantity,
-        },
+      const [newprodorder] = await ProdOrder.create(
+        [
+          {
+            productId: product._id,
+            orderId: newOrder._id,
+            quantity: item.quantity,
+          },
+        ],
         { session }
       );
 
       totalAmount += newprodorder.totalPrice;
       prodOrderDocs.push(newprodorder);
     }
+    console.log("products created");
+
     newOrder.totalAmount = totalAmount;
     await newOrder.save({ session });
+    console.log("Order saved");
 
     await Ledger.create(
-      {
-        date: orderDate,
-        type: "Profit",
-        orderId: newOrder._id,
-        paymentMode: paymentMode,
-        amount: totalAmount,
-      },
+      [
+        {
+          date: orderDate,
+          type: "Profit",
+          orderId: newOrder._id,
+          paymentMode: paymentMode,
+          amount: totalAmount,
+        },
+      ],
       { session }
     );
+    console.log("Ledger created");
 
     await session.commitTransaction();
     res.status(201).json({ order: newOrder, items: prodOrderDocs });

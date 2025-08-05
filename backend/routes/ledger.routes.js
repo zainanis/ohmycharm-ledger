@@ -4,4 +4,4 @@ const router = express.Router();
 
 router.get("/", getAllLedger);
 
-module.exports = { router };
+module.exports = router;
