@@ -23,7 +23,7 @@ const getExpenseById = async (req, res) => {
   }
 };
 const createExpense = async (req, res) => {
-  const session = mongoose.startSession();
+  const session = await mongoose.startSession();
 
   try {
     const { name, type, cost, description, paymentMode } = req.body;
@@ -51,7 +51,7 @@ const createExpense = async (req, res) => {
   }
 };
 const updateExpenseById = async (req, res) => {
-  const session = mongoose.startSession();
+  const session = await mongoose.startSession();
 
   try {
     const { id } = req.params;
@@ -97,7 +97,7 @@ const updateExpenseById = async (req, res) => {
   }
 };
 const deleteExpenseById = async (req, res) => {
-  const session = mongoose.startSession();
+  const session = await mongoose.startSession();
   try {
     const { id } = req.params;
 
