@@ -1,4 +1,5 @@
-const { Expense } = require("../models/index");
+const { Expense, Ledger } = require("../models/index");
+const mongoose = require("mongoose");
 const getAllExpenses = async (req, res) => {
   try {
     const allExpenses = await Expense.find();
@@ -22,20 +23,40 @@ const getExpenseById = async (req, res) => {
   }
 };
 const createExpense = async (req, res) => {
+  const session = mongoose.startSession();
+
   try {
-    const { name, type, cost, description } = req.body;
-
-    const newExpense = await Expense.create({ name, type, cost, description });
-
+    const { name, type, cost, description, paymentMode } = req.body;
+    await session.startTransaction();
+    const newExpense = await Expense.create(
+      { name, type, cost, description },
+      { session }
+    );
+    await Ledger.create(
+      {
+        type: type,
+        expenseId: newExpense._id,
+        paymentMode: paymentMode,
+        amount: cost,
+      },
+      { session }
+    );
+    await session.commitTransaction();
     res.status(201).json(newExpense);
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json(error.message);
+  } finally {
+    await session.endSession();
   }
 };
 const updateExpenseById = async (req, res) => {
+  const session = mongoose.startSession();
+
   try {
     const { id } = req.params;
-    const { name, type, cost, description } = req.body;
+    const { name, type, cost, description, paymentMode } = req.body;
+    await session.startTransaction();
 
     const updatedExpense = await Expense.findByIdAndUpdate(
       id,
@@ -48,27 +69,53 @@ const updateExpenseById = async (req, res) => {
       {
         runValidators: true,
         new: true,
+        session,
       }
     );
 
     if (!updatedExpense) return res.status(404).json("Expense not found.");
 
+    await Ledger.findOneAndUpdate(
+      { expenseId: id },
+      {
+        type: type,
+        expenseId: id,
+        paymentMode: paymentMode,
+        amount: cost,
+      },
+      { session, runValidators: true }
+    );
+    await session.commitTransaction();
+
     res.status(200).json(updatedExpense);
   } catch (error) {
+    await session.abortTransaction();
+
     res.status(500).json(error.message);
+  } finally {
+    await session.endSession();
   }
 };
 const deleteExpenseById = async (req, res) => {
+  const session = mongoose.startSession();
   try {
     const { id } = req.params;
 
+    await session.startTransaction();
     const deletedexpense = await Expense.findByIdAndDelete(id);
 
     if (!deletedexpense) return res.status(404).json("Expense not found.");
 
+    await Ledger.findOneAndDelete({ expenseId: id });
+    await session.commitTransaction();
+
     res.status(200).json("Expense deleted successfully.");
   } catch (error) {
+    await session.abortTransaction();
+
     res.status(500).json(error.message);
+  } finally {
+    await session.endSession();
   }
 };
 

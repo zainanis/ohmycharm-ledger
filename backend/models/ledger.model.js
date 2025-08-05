@@ -8,6 +8,7 @@ const ledgerSchema = new mongoose.Schema(
     },
     type: {
       type: String,
+      enum: ["Profit", "Advertisment", "Goods Purchase"],
       required: true,
     },
     orderId: {
@@ -21,6 +22,10 @@ const ledgerSchema = new mongoose.Schema(
     paymentMode: {
       type: String,
       enum: ["Cash", "Online"],
+    },
+    amount: {
+      type: Number,
+      required: true,
     },
   },
   { timestamps: true }

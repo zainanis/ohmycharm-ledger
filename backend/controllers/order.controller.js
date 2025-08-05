@@ -1,4 +1,10 @@
-const { Product, Order, ProdOrder, Customer } = require("../models/index");
+const {
+  Product,
+  Order,
+  ProdOrder,
+  Customer,
+  Ledger,
+} = require("../models/index");
 // const Order = require("../models/order.model");
 // const ProdOrder = require("../models/prodorder.model");
 // const Customer = require("../models/customer.model");
@@ -8,8 +14,15 @@ const createOrder = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { customerId, status, orderDate, sentDate, recieveDate, products } =
-      req.body;
+    const {
+      customerId,
+      status,
+      orderDate,
+      sentDate,
+      recieveDate,
+      paymentMode,
+      products,
+    } = req.body;
 
     if (!(await Customer.findById(customerId)))
       return res.status(404).json("Customer does not exist.");
@@ -52,6 +65,18 @@ const createOrder = async (req, res) => {
     }
     newOrder.totalAmount = totalAmount;
     await newOrder.save({ session });
+
+    await Ledger.create(
+      {
+        date: orderDate,
+        type: "Profit",
+        orderId: newOrder._id,
+        paymentMode: paymentMode,
+        amount: totalAmount,
+      },
+      { session }
+    );
+
     await session.commitTransaction();
     res.status(201).json({ order: newOrder, items: prodOrderDocs });
   } catch (error) {
@@ -93,12 +118,13 @@ const updateOrderById = async (req, res) => {
     const order = await Order.findById(id);
     if (!order) return res.status(404).json("Order does not exists");
 
-    const { status, orderDate, sentDate, recieveDate, products } = req.body;
+    const { status, orderDate, sentDate, recieveDate, paymentMode, products } =
+      req.body;
     let totalAmount = 0;
     let prodOrderDocs = [];
 
     if (products) {
-      session.startSession();
+      session.startTransaction();
 
       await ProdOrder.deleteMany({ orderId: id }, { session });
 
@@ -133,6 +159,17 @@ const updateOrderById = async (req, res) => {
       { new: true, runValidators: true, session }
     );
 
+    await Ledger.findOneAndUpdate(
+      { orderId: id },
+      {
+        date: orderDate,
+        type: "Profit",
+        paymentMode: paymentMode,
+        amount: totalAmount,
+      },
+      { session, runValidators: true }
+    );
+
     await session.commitTransaction();
     res.status(200).json(updatedOrder);
   } catch (error) {
@@ -152,6 +189,8 @@ const deleteOrderById = async (req, res) => {
     if (!deletedOrder) return res.status(404).json("Order doesnot exist.");
 
     await ProdOrder.deleteMany({ orderId: id });
+
+    await Ledger.deleteOne({ orderId: id });
     res.status(200).json("Order deleted");
   } catch (error) {
     res.status(500).json(error.message);
