@@ -1,7 +1,7 @@
-const Product = require("../models/product.model");
-const Order = require("../models/order.model");
-const ProdOrder = require("../models/prodorder.model");
-const Customer = require("../models/customer.model");
+const { Product, Order, ProdOrder, Customer } = require("../models/index");
+// const Order = require("../models/order.model");
+// const ProdOrder = require("../models/prodorder.model");
+// const Customer = require("../models/customer.model");
 
 const mongoose = require("mongoose");
 const createOrder = async (req, res) => {

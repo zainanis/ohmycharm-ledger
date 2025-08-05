@@ -1,4 +1,11 @@
 const express = require("express");
+const {
+  getAllExpenses,
+  getExpenseById,
+  createExpense,
+  updateExpenseById,
+  deleteExpenseById,
+} = require("../controllers/expenses.controller");
 const router = express.Router();
 
 router.get("/", getAllExpenses);
