@@ -41,7 +41,6 @@ const createOrder = async (req, res) => {
       ],
       { session }
     );
-    console.log("order created");
     let totalAmount = 0;
     const prodOrderDocs = [];
 
@@ -64,11 +63,9 @@ const createOrder = async (req, res) => {
       totalAmount += newprodorder.totalPrice;
       prodOrderDocs.push(newprodorder);
     }
-    console.log("products created");
 
     newOrder.totalAmount = totalAmount;
     await newOrder.save({ session });
-    console.log("Order saved");
 
     await Ledger.create(
       [
@@ -82,7 +79,6 @@ const createOrder = async (req, res) => {
       ],
       { session }
     );
-    console.log("Ledger created");
 
     await session.commitTransaction();
     res.status(201).json({ order: newOrder, items: prodOrderDocs });
@@ -120,6 +116,7 @@ const getOrderById = async (req, res) => {
 
 const updateOrderById = async (req, res) => {
   const session = await mongoose.startSession();
+
   try {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -128,6 +125,7 @@ const updateOrderById = async (req, res) => {
     const { status, orderDate, sentDate, recieveDate, paymentMode, products } =
       req.body;
     let totalAmount = 0;
+
     let prodOrderDocs = [];
 
     if (products) {
@@ -140,12 +138,15 @@ const updateOrderById = async (req, res) => {
 
         if (!product) return res.status(404).json("prodcut does not exists");
 
-        const newprodorder = await ProdOrder.create(
-          {
-            productId: product._id,
-            orderId: id,
-            quantity: item.quantity,
-          },
+        const [newprodorder] = await ProdOrder.create(
+          [
+            {
+              productId: product._id,
+              orderId: id,
+              quantity: item.quantity,
+            },
+          ],
+
           { session }
         );
 
@@ -156,6 +157,7 @@ const updateOrderById = async (req, res) => {
 
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
+
       {
         ...(status && { status }),
         ...(orderDate && { orderDate }),
@@ -163,17 +165,20 @@ const updateOrderById = async (req, res) => {
         ...(recieveDate && { recieveDate }),
         ...(products && { totalAmount }),
       },
+
       { new: true, runValidators: true, session }
     );
 
     await Ledger.findOneAndUpdate(
       { orderId: id },
+
       {
         date: orderDate,
         type: "Profit",
         paymentMode: paymentMode,
         amount: totalAmount,
       },
+
       { session, runValidators: true }
     );
 
