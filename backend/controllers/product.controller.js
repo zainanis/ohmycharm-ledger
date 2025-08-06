@@ -3,6 +3,9 @@ const { Product } = require("../models/index");
 const createProduct = async (req, res) => {
   try {
     const { name, price, description, status } = req.body;
+    if (status === "") {
+      status = undefined;
+    }
     const product = await Product.create({ name, price, description, status });
     res.status(201).json(product);
   } catch (error) {
