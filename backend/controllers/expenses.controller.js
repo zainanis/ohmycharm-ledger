@@ -1,5 +1,6 @@
 const { Expense, Ledger } = require("../models/index");
 const mongoose = require("mongoose");
+
 const getAllExpenses = async (req, res) => {
   try {
     const allExpenses = await Expense.find();
@@ -9,6 +10,7 @@ const getAllExpenses = async (req, res) => {
     res.status(500).json(error.message);
   }
 };
+
 const getExpenseById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -22,23 +24,26 @@ const getExpenseById = async (req, res) => {
     res.status(500).json(error.message);
   }
 };
+
 const createExpense = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
     const { name, type, cost, description, paymentMode } = req.body;
     await session.startTransaction();
-    const newExpense = await Expense.create(
-      { name, type, cost, description },
+    const [newExpense] = await Expense.create(
+      [{ name, type, cost, description }],
       { session }
     );
     await Ledger.create(
-      {
-        type: type,
-        expenseId: newExpense._id,
-        paymentMode: paymentMode,
-        amount: cost,
-      },
+      [
+        {
+          type: type,
+          expenseId: newExpense._id,
+          paymentMode: paymentMode,
+          amount: cost,
+        },
+      ],
       { session }
     );
     await session.commitTransaction();

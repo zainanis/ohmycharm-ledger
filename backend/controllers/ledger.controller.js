@@ -22,7 +22,6 @@ const getAllLedger = async (req, res) => {
       };
     });
 
-    console.log(allEntries);
     res.status(200).json(formattedEntries);
   } catch (error) {
     res.status(500).json({ error: error.message });
