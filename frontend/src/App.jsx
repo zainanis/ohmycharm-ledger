@@ -1,9 +1,12 @@
-import Products from "./pages/products";
+import { Createproduct } from "./components/createproduct";
+import Layout from "./components/Layout";
 
 function App() {
   return (
     <>
-      <Products />
+      <Layout>
+        <Createproduct />
+      </Layout>
     </>
   );
 }

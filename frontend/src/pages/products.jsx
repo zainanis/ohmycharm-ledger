@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Createproduct } from "../components/createproduct";
 import axios from "axios";
+import { ProdcutBlock } from "../components/productBlock";
 
 const Products = () => {
   const [allProducts, SetallProducts] = useState([]);
@@ -15,23 +16,23 @@ const Products = () => {
         console.log(err);
       });
   }, []);
-  return (
-    <>
-      <ul>
-        {allProducts.map((product) => {
-          return (
-            <>
-              <li key={product._id}>
-                {product.name},{product.price},{product.description},
-                {product.status}
-              </li>
-            </>
-          );
-        })}
-      </ul>
 
-      <Createproduct />
-    </>
+  return (
+    <div className="flex gap-5 border-solid border-1  ">
+      {allProducts.map((product) => {
+        return (
+          <>
+            <ProdcutBlock
+              key={product._id}
+              name={product.name}
+              price={product.price}
+              description={product.description}
+              status={product.status}
+            />
+          </>
+        );
+      })}
+    </div>
   );
 };
 
