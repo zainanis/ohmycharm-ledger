@@ -1,6 +1,14 @@
 import { ChevronFirst, ChevronLast } from "lucide-react";
 import { createContext, useContext, useState } from "react";
 import logo from "../assets/log.png";
+import {
+  Boxes,
+  Package,
+  LayoutDashboard,
+  BarChart3,
+  UserCircle,
+  Receipt,
+} from "lucide-react";
 const SidebarContext = createContext();
 
 export const Sidebar = ({ children }) => {
@@ -8,7 +16,7 @@ export const Sidebar = ({ children }) => {
   return (
     <aside
       className={`h-screen ${
-        expanded ? "w-60" : "w-20"
+        expanded ? "flex" : "w-20"
       } transition-all duration-300`}
     >
       <nav className="h-full flex flex-col bg-white  shadow-sm">
@@ -21,12 +29,12 @@ export const Sidebar = ({ children }) => {
             }`}
           />
 
-          <button
+          {/* <button
             onClick={() => setExpanded(!expanded)}
             className="p-1.5 rounded-lg bg-pink-50 hover:bg-pink-100 mr-5"
           >
             {expanded ? <ChevronFirst /> : <ChevronLast />}
-          </button>
+          </button> */}
         </div>
 
         <SidebarContext.Provider value={{ expanded }}>
@@ -56,5 +64,18 @@ export const SidebarItem = ({ icon, text, active }) => {
         {text}
       </span>
     </li>
+  );
+};
+
+export const CompleteSidebar = () => {
+  return (
+    <Sidebar>
+      <SidebarItem icon={<LayoutDashboard size={20} />} text="Dashboard" />
+      <SidebarItem icon={<BarChart3 size={20} />} text="Statistics" />
+      <SidebarItem icon={<UserCircle size={20} />} text="Customers" />
+      <SidebarItem icon={<Boxes size={20} />} text="Products" />
+      <SidebarItem icon={<Package size={20} />} text="Orders" />
+      <SidebarItem icon={<Receipt size={20} />} text="Ledger" />
+    </Sidebar>
   );
 };

@@ -1,13 +1,16 @@
-import { Createproduct } from "./components/createproduct";
 import Layout from "./components/Layout";
+import { BrowserRouter, Route, Routes } from "react-router";
+import Products from "./pages/products";
 
 function App() {
   return (
-    <>
-      <Layout>
-        <Createproduct />
-      </Layout>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Products />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
