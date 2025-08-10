@@ -46,16 +46,6 @@ const RouteSelect = () => {
       {routes.map(({ path, title, Icon }) => {
         return <Route Icon={Icon} title={title} path={path} />;
       })}
-      {/* <Route Icon={BiSolidDashboard} selected={true} title="Dashboard" />
-      <Route Icon={LuBoxes} selected={false} title="Products" />
-      <Route Icon={MdAccountCircle} selected={false} title="Customers" />
-      <Route Icon={AiFillDollarCircle} selected={false} title="Expenses" />
-      <Route Icon={FaShoppingCart} selected={false} title="Orders" />
-      <Route
-        Icon={BsFillFileEarmarkSpreadsheetFill}
-        selected={false}
-        title="Ledger"
-      /> */}
     </div>
   );
 };
