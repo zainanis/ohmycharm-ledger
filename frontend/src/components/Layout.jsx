@@ -1,15 +1,12 @@
-import { Search } from "./Search";
-import { CompleteSidebar } from "./Sidebar";
+import Sidebar from "./Sidebar/Sidebar";
+import { Outlet } from "react-router";
 
-const Layout = ({ children }) => {
+const Layout = () => {
   return (
-    <div className="flex">
-      <CompleteSidebar />
-      <div className="flex flex-col">
-        <Search />
-        {children}
-      </div>
-    </div>
+    <main className="bg-stone-100 text-stone-950 grid  p-4 grid-cols-[220px_1fr] ">
+      <Sidebar />
+      <Outlet />
+    </main>
   );
 };
 
