@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import ProductCard from "../components/Products/ProductCard.jsx";
+import { FaPlus } from "react-icons/fa";
+import { NavLink } from "react-router";
+
 import Paginate from "../components/Products/Paginate.jsx";
 
 const Products = () => {
   const [allProducts, SetallProducts] = useState([
     {
+      id: "behqbe1y37311",
       name: "Flower Bracelet",
       price: 750,
       description:
@@ -105,18 +108,26 @@ const Products = () => {
           <h1 className="font-bold text-4xl text-pink-900">Products</h1>
           <input
             type="text"
-            className="border-2 border-solid border-stone-200 rounded-lg pr-20 py-2"
+            className="border-1 border-solid border-stone-200 rounded-lg pr-20 py-2 pl-5"
             placeholder="Search Products"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="flex justify-end px-5 ">
+        <div className="flex justify-end px-5 gap-5 ">
+          <NavLink
+            className=" flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
+            to="add"
+          >
+            <FaPlus />
+            Add Product
+          </NavLink>
+
           <select
             value={selectedStatus}
             onChange={handleStatusChange}
-            className="border px-4 py-2 rounded"
+            className="border px-4 py-2 rounded border-stone-200 text-stone-500"
           >
             <option value="All">All</option>
             <option value="Available">Available</option>

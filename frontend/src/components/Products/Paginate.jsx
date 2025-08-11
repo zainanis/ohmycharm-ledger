@@ -32,6 +32,7 @@ const Paginate = ({
           <ProductCard {...product} />
         ))}
       </div>
+
       {filteredProducts.length > 10 ? (
         <div className="flex justify-center items-center gap-3  flex-wrap">
           {/* Previous Button */}
