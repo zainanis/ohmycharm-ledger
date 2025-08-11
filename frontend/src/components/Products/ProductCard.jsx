@@ -1,6 +1,6 @@
 const ProductCard = ({ name, price, description, status }) => {
   return (
-    <div className="bg-white w-70 min-h-70 max-h-70 px-6 py-8 flex flex-col justify-between rounded-xl border-solid border-1 border-stone-200 hover:shadow-2xl transition-shadow ">
+    <div className="bg-white max-w-70 min-h-80 max-h-80 px-6 py-8 flex flex-col justify-between rounded-xl border-solid border-1 border-stone-200 hover:shadow-2xl transition-shadow ">
       <div className="flex gap-15">
         <h1 className="text-pink-900 text-lg font-bold">{name} </h1>
         <p className="text-pink-900">{price}PKR </p>
@@ -20,10 +20,10 @@ const ProductCard = ({ name, price, description, status }) => {
       <p
         className={`py-2  text-center rounded-2xl ${
           status == "Available"
-            ? " bg-green-200 text-green-500"
+            ? " bg-green-100 text-green-400"
             : status == "Discontinued"
-            ? " bg-red-200  text-red-500"
-            : "bg-yellow-200  text-yellow-500"
+            ? " bg-red-100  text-red-400"
+            : "bg-yellow-100  text-yellow-400"
         } `}
       >
         {status}
