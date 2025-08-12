@@ -14,10 +14,6 @@ app.use(cors());
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.json({ msg: "Hello this is a test" });
-});
-
 app.use("/api", router);
 
 app.listen(PORT, () => {
