@@ -13,13 +13,13 @@ export const Createproduct = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate("/products", { replace: true });
     const newPost = { name, price: parseFloat(price), description, status };
     console.log(newPost);
     axios
       .post("http://localhost:5001/api/products", newPost)
       .then((res) => {
         console.log("Product Created Successfully.");
+        navigate("/products", { replace: true });
       })
       .catch((error) => {
         console.log(error.response);

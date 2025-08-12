@@ -6,80 +6,81 @@ import { NavLink } from "react-router";
 import Paginate from "../components/Products/Paginate.jsx";
 
 const Products = () => {
-  const [allProducts, SetallProducts] = useState([
-    {
-      id: "behqbe1y37311",
-      name: "Flower Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Available",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      status: "Discontinued",
-    },
-    {
-      name: "Flower Bracelet Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Currently Unavailable",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Available",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      status: "Discontinued",
-    },
-    {
-      name: "Flower Bracelet Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Currently Unavailable",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Available",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      status: "Discontinued",
-    },
-    {
-      name: "Flower Bracelet Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Currently Unavailable",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Available",
-    },
-    {
-      name: "Flower Bracelet",
-      price: 750,
-      description:
-        "this is a test description for the bracelet there is an option for it to not be visible.",
-      status: "Available",
-    },
-  ]);
+  // const [allProducts, SetallProducts] = useState([
+  //   {
+  //     id: "behqbe1y37311",
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Available",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     status: "Discontinued",
+  //   },
+  //   {
+  //     name: "Flower Bracelet Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Currently Unavailable",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Available",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     status: "Discontinued",
+  //   },
+  //   {
+  //     name: "Flower Bracelet Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Currently Unavailable",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Available",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     status: "Discontinued",
+  //   },
+  //   {
+  //     name: "Flower Bracelet Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Currently Unavailable",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Available",
+  //   },
+  //   {
+  //     name: "Flower Bracelet",
+  //     price: 750,
+  //     description:
+  //       "this is a test description for the bracelet there is an option for it to not be visible.",
+  //     status: "Available",
+  //   },
+  // ]);
+  const [allProducts, SetallProducts] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");

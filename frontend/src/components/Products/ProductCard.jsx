@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router";
 
-const ProductCard = ({ id, name, price, description, status }) => {
+const ProductCard = ({ _id, name, price, description, status }) => {
   const navigate = useNavigate();
   return (
     <div
       onClick={() => {
-        navigate(`/products/${id}`);
+        navigate(`/products/${_id}`);
       }}
-      className="bg-white max-w-70 min-h-80 max-h-80 px-6 py-8 flex flex-col justify-between rounded-xl border-solid border-1 border-stone-200 hover:shadow-2xl transition-shadow "
+      className="bg-white max-w-70 min-w-70 min-h-80 max-h-80 px-6 py-8 flex flex-col justify-between rounded-xl border-solid border-1 border-stone-200 hover:shadow-2xl transition-shadow "
     >
       <div className="flex gap-15">
         <h1 className="text-pink-900 text-lg font-bold">{name} </h1>
