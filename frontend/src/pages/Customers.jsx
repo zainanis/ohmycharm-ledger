@@ -2,27 +2,30 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
-import Paginate from "../components/Products/Paginate.jsx";
+import Paginate from "../components/utils/Paginate.jsx";
+import { setCustomers } from "../state/customerSlice.js";
+
+import { useDispatch, useSelector } from "react-redux";
 
 const Customers = () => {
-  const [allProducts, SetallProducts] = useState([]);
+  const dispatch = useDispatch();
+  const allCustomers = useSelector((state) => state.customers.allCustomers);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
 
-  const handleDelete = (id) => {
-    SetallProducts((prev) => prev.filter((product) => product._id !== id));
-  };
-
   useEffect(() => {
-    axios
-      .get("http://localhost:5001/api/products")
-      .then((res) => {
-        console.log(res);
-        SetallProducts(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+    if (allCustomers.length === 0) {
+      axios
+        .get("http://localhost:5001/api/customers")
+        .then((res) => {
+          console.log(res);
+          dispatch(setCustomers(res.data));
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
   }, []);
 
   return (
@@ -51,11 +54,11 @@ const Customers = () => {
       </div>
 
       <Paginate
-        allProducts={allProducts}
+        who="Customer"
+        allProducts={allCustomers}
         currentPage={currentPage}
         search={search}
         setCurrentPage={setCurrentPage}
-        handleDelete={handleDelete}
       />
     </div>
   );

@@ -20,7 +20,7 @@ function App() {
           <Route path="products/add" element={<Createproduct />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/add" element={<Createcustomer />} />
-
+          <Route path="customers/:id" element={<Createcustomer />} />
           <Route path="expenses" element={<Expenses />} />
           <Route path="orders" element={<Orders />} />
           <Route path="ledger" element={<Ledger />} />

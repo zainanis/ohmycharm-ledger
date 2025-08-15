@@ -3,7 +3,7 @@ import axios from "axios";
 import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
 
-import Paginate from "../components/Products/Paginate.jsx";
+import Paginate from "../components/utils/Paginate";
 
 const Products = () => {
   // const [allProducts, SetallProducts] = useState([
@@ -143,6 +143,7 @@ const Products = () => {
       </div>
 
       <Paginate
+        who="Product"
         allProducts={allProducts}
         selectedStatus={selectedStatus}
         currentPage={currentPage}

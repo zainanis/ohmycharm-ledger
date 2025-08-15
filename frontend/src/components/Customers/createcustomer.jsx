@@ -3,6 +3,8 @@ import axios from "axios";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
+import { useDispatch } from "react-redux";
+import { addCustomer } from "../../state/customerSlice";
 
 export const Createcustomer = () => {
   const { id } = useParams();
@@ -14,8 +16,9 @@ export const Createcustomer = () => {
   const [email, setEmail] = useState("");
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleSubmit = (e) => {
+  const handleCreatecustomer = (e) => {
     e.preventDefault();
 
     const newCustomer = {
@@ -33,6 +36,7 @@ export const Createcustomer = () => {
     request
       .then((res) => {
         console.log("Customer Created Successfully.");
+        dispatch(addCustomer(res.data));
         navigate("/customers", { replace: true });
       })
       .catch((error) => {
@@ -55,7 +59,7 @@ export const Createcustomer = () => {
       <div className=" flex flex-col items-center justify-center  min-h-[75vh]">
         <form
           className=" flex flex-col justify-between min-h-100 w-100"
-          onSubmit={handleSubmit}
+          onSubmit={handleCreatecustomer}
         >
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Name">Name:</label>

@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from "react";
-import ProductCard from "./ProductCard";
+import ProductCard from "../Products/ProductCard";
+import Customercard from "../Customers/Customercard";
 
 const Paginate = ({
+  who,
   allProducts,
   selectedStatus,
   currentPage,
@@ -30,9 +32,13 @@ const Paginate = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap  justify-center gap-5 min-h-190">
-        {currentItems.map((product) => (
-          <ProductCard {...product} handleDelete={handleDelete} />
-        ))}
+        {who == "Customer"
+          ? currentItems.map((customer) => <Customercard {...customer} />)
+          : who == "Product"
+          ? currentItems.map((product) => (
+              <ProductCard {...product} handleDelete={handleDelete} />
+            ))
+          : ""}
       </div>
 
       {filteredProducts.length > 10 ? (
