@@ -12,7 +12,8 @@ const Paginate = ({
   const itemsPerPage = 10;
 
   const filteredProducts = useMemo(() => {
-    if (selectedStatus === "All") return allProducts;
+    if (selectedStatus === "All" || selectedStatus == undefined)
+      return allProducts;
     return allProducts.filter((product) => product.status === selectedStatus);
   }, [selectedStatus, allProducts]);
 

@@ -7,6 +7,7 @@ import Expenses from "./pages/Expenses";
 import Orders from "./pages/Orders";
 import Ledger from "./pages/Ledger";
 import { Createproduct } from "./components/Products/createproduct";
+import { Createcustomer } from "./components/Customers/createcustomer";
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
           <Route path="products/:id" element={<Createproduct />} />
           <Route path="products/add" element={<Createproduct />} />
           <Route path="customers" element={<Customers />} />
+          <Route path="customers/add" element={<Createcustomer />} />
+
           <Route path="expenses" element={<Expenses />} />
           <Route path="orders" element={<Orders />} />
           <Route path="ledger" element={<Ledger />} />
