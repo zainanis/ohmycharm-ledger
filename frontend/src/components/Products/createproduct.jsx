@@ -1,22 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
+import { useParams } from "react-router";
 
 export const Createproduct = () => {
-  const navigate = useNavigate();
-
+  const { id } = useParams();
+  const [product, Setproduct] = useState({});
+  const [loading, Setloading] = useState(false);
   const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
 
+  useEffect(() => {
+    if (id != undefined) {
+      Setloading(true);
+      axios
+        .get(`http://localhost:5001/api/products/${id}`)
+        .then((res) => {
+          setName(res.data.name || "");
+          setPrice(res.data.price || 0);
+          setDescription(res.data.description || "");
+          setStatus(res.data.status || "Available");
+          Setproduct(res.data);
+          Setloading(false);
+        })
+        .catch((err) => {
+          console.log(err.message);
+          Setloading(false);
+        });
+    }
+  }, [id]);
+
+  const navigate = useNavigate();
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const newPost = { name, price: parseFloat(price), description, status };
     console.log(newPost);
-    axios
-      .post("http://localhost:5001/api/products", newPost)
+    const request = id
+      ? axios.put(`http://localhost:5001/api/products/${id}`, newPost)
+      : axios.post("http://localhost:5001/api/products", newPost);
+
+    request
       .then((res) => {
         console.log("Product Created Successfully.");
         navigate("/products", { replace: true });
@@ -30,7 +58,9 @@ export const Createproduct = () => {
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Add Product</h1>
+          <h1 className="font-bold text-4xl text-pink-900">
+            {id ? "Update Product" : "Add Product"}
+          </h1>
         </div>
         <div className="pl-5">
           <NavLink to="/products">
@@ -89,7 +119,7 @@ export const Createproduct = () => {
               className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
               type="submit"
             >
-              Create Product
+              {id ? "Update Product" : "Create Product"}
             </button>
           </div>
         </form>
