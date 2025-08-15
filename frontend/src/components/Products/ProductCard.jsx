@@ -1,7 +1,17 @@
 import { useNavigate } from "react-router";
+import Modal from "../utils/Modal";
+import { useState } from "react";
 
-const ProductCard = ({ _id, name, price, description, status }) => {
+const ProductCard = ({
+  _id,
+  name,
+  price,
+  description,
+  status,
+  handleDelete,
+}) => {
   const navigate = useNavigate();
+  const [showModal, SetshowModal] = useState(false);
 
   return (
     <div className="bg-white max-w-70 min-w-70 min-h-80 max-h-80 px-6 py-8 flex flex-col justify-between rounded-xl border-solid border-1 border-stone-200 hover:shadow-2xl transition-shadow ">
@@ -47,10 +57,26 @@ const ProductCard = ({ _id, name, price, description, status }) => {
         <button
           className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
           type="submit"
+          onClick={() => {
+            SetshowModal(true);
+          }}
         >
           Delete
         </button>
       </div>
+
+      {showModal ? (
+        <Modal
+          onClose={() => {
+            SetshowModal(false);
+          }}
+          name={name}
+          id={_id}
+          handleDelete={handleDelete}
+        />
+      ) : (
+        ""
+      )}
     </div>
   );
 };

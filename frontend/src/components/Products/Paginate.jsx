@@ -6,6 +6,7 @@ const Paginate = ({
   selectedStatus,
   currentPage,
   setCurrentPage,
+  handleDelete,
   search,
 }) => {
   const itemsPerPage = 10;
@@ -29,7 +30,7 @@ const Paginate = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap  justify-center gap-5 min-h-190">
         {currentItems.map((product) => (
-          <ProductCard {...product} />
+          <ProductCard {...product} handleDelete={handleDelete} />
         ))}
       </div>
 

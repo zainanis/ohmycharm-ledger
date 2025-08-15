@@ -7,7 +7,6 @@ import Expenses from "./pages/Expenses";
 import Orders from "./pages/Orders";
 import Ledger from "./pages/Ledger";
 import { Createproduct } from "./components/Products/createproduct";
-import ProductDetails from "./components/Products/ProductDetails";
 
 function App() {
   return (

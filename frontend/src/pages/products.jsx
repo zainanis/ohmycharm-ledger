@@ -85,6 +85,10 @@ const Products = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
 
+  const handleDelete = (id) => {
+    SetallProducts((prev) => prev.filter((product) => product._id !== id));
+  };
+
   useEffect(() => {
     axios
       .get("http://localhost:5001/api/products")
@@ -144,6 +148,7 @@ const Products = () => {
         currentPage={currentPage}
         search={search}
         setCurrentPage={setCurrentPage}
+        handleDelete={handleDelete}
       />
     </div>
   );

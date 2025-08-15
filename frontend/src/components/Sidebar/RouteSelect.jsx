@@ -67,7 +67,7 @@ const Route = ({ Icon, title, path }) => {
     >
       {({ isActive }) => (
         <>
-          <Icon className={isActive ? "text-pink-500" : ""} />
+          <Icon className={isActive ? "text-pink-900" : ""} />
           <span>{title}</span>
         </>
       )}
