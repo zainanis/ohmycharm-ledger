@@ -62,6 +62,7 @@ const Customercard = ({ _id, name, phoneNumber, address, email }) => {
           onClose={() => {
             SetshowModal(false);
           }}
+          who="customers"
           name={name}
           id={_id}
         />

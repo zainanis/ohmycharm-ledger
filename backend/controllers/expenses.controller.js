@@ -29,10 +29,10 @@ const createExpense = async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    const { name, type, cost, description, paymentMode } = req.body;
+    const { name, type, cost, description, date, paymentMode } = req.body;
     await session.startTransaction();
     const [newExpense] = await Expense.create(
-      [{ name, type, cost, description }],
+      [{ name, type, cost, date, description, paymentMode }],
       { session }
     );
     await Ledger.create(
@@ -60,7 +60,7 @@ const updateExpenseById = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { name, type, cost, description, paymentMode } = req.body;
+    const { name, type, cost, description, date, paymentMode } = req.body;
     await session.startTransaction();
 
     const updatedExpense = await Expense.findByIdAndUpdate(
@@ -69,6 +69,8 @@ const updateExpenseById = async (req, res) => {
         ...(name && { name }),
         ...(type && { type }),
         ...(cost && { cost }),
+        ...(date && { date }),
+        ...(paymentMode && { paymentMode }),
         ...(description && { description }),
       },
       {

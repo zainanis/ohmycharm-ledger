@@ -3,8 +3,8 @@ import axios from "axios";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
-import { useDispatch } from "react-redux";
-import { addCustomer } from "../../state/customerSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { addCustomer, updateCustomer } from "../../state/customerSlice";
 
 export const Createcustomer = () => {
   const { id } = useParams();
@@ -18,30 +18,64 @@ export const Createcustomer = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const handleCreatecustomer = (e) => {
+  const allcustomers = useSelector((state) => state.customers.allCustomers);
+
+  useEffect(() => {
+    if (id) {
+      const customer = allcustomers.find((customer) => customer._id === id);
+
+      if (customer) {
+        setName(customer.name);
+        setAddress(customer.address);
+        setPhonenumber(customer.phoneNumber);
+        setEmail(customer.email);
+      }
+    }
+  }, []);
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    const newCustomer = {
-      name,
-      phoneNumber: parseFloat(phonenumber),
-      address,
-      email,
-    };
-    console.log(newCustomer);
-    const request = axios.post(
-      "http://localhost:5001/api/customers",
-      newCustomer
-    );
-
-    request
-      .then((res) => {
-        console.log("Customer Created Successfully.");
-        dispatch(addCustomer(res.data));
-        navigate("/customers", { replace: true });
-      })
-      .catch((error) => {
-        console.log(error.response);
-      });
+    if (id == undefined) {
+      const newCustomer = {
+        name,
+        phoneNumber: parseFloat(phonenumber),
+        address,
+        email,
+      };
+      const request = axios.post(
+        "http://localhost:5001/api/customers",
+        newCustomer
+      );
+      request
+        .then((res) => {
+          console.log("Customer Created Successfully.");
+          dispatch(addCustomer(res.data));
+          navigate("/customers", { replace: true });
+        })
+        .catch((error) => {
+          console.log(error.response);
+        });
+    } else {
+      const updatedCustomer = {
+        name,
+        phoneNumber: parseFloat(phonenumber),
+        address,
+        email,
+      };
+      const request = axios.put(
+        `http://localhost:5001/api/customers/${id}`,
+        updatedCustomer
+      );
+      request
+        .then((res) => {
+          console.log("Customer Created Successfully.");
+          dispatch(updateCustomer(res.data));
+          navigate("/customers", { replace: true });
+        })
+        .catch((error) => {
+          console.log(error.response);
+        });
+    }
   };
 
   return (
@@ -59,7 +93,7 @@ export const Createcustomer = () => {
       <div className=" flex flex-col items-center justify-center  min-h-[75vh]">
         <form
           className=" flex flex-col justify-between min-h-100 w-100"
-          onSubmit={handleCreatecustomer}
+          onSubmit={handleSubmit}
         >
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Name">Name:</label>

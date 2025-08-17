@@ -73,6 +73,7 @@ const ProductCard = ({
           name={name}
           id={_id}
           handleDelete={handleDelete}
+          who="products"
         />
       ) : (
         ""

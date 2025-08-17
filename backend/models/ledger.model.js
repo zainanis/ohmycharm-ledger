@@ -8,7 +8,7 @@ const ledgerSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["Profit", "Advertisment", "Goods Purchase"],
+      enum: ["Profit", "Advertisement", "Goods Purchase"],
       required: true,
     },
     orderId: {

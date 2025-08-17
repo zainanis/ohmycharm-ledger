@@ -8,11 +8,20 @@ const expenseSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["Advertisment", "Goods Purchase"],
+      enum: ["Advertisement", "Goods Purchase"],
       required: true,
     },
     cost: {
       type: Number,
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    },
+    paymentMode: {
+      type: String,
+      enum: ["Cash", "Online"],
       required: true,
     },
     description: {

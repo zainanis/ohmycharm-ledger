@@ -1,13 +1,19 @@
 import React from "react";
 import { MdCancel } from "react-icons/md";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { deleteCustomer } from "../../state/customerSlice";
 
-const Modal = ({ onClose, name, id, handleDelete }) => {
+const Modal = ({ onClose, name, id, handleDelete, who }) => {
+  const dispatch = useDispatch();
   const doDelete = () => {
     axios
-      .delete(`http://localhost:5001/api/products/${id}`)
+      .delete(`http://localhost:5001/api/${who}/${id}`)
       .then(() => {
-        handleDelete(id);
+        dispatch(deleteCustomer({ _id: id }));
+        if (who == "products") {
+          handleDelete(id);
+        }
         onClose();
       })
       .catch((err) => {
