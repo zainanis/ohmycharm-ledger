@@ -66,12 +66,12 @@ const Expenses = () => {
           who="expenses"
           data={allExpenses}
           header={[
-            "Name",
-            "Type",
-            "Cost",
-            "Payment Mode",
-            "Date",
-            "Description",
+            { label: "Name", path: ".name" },
+            { label: "Type", path: ".type" },
+            { label: "Cost", path: ".cost" },
+            { label: "Payment Mode", path: ".paymentMode" },
+            { label: "Date", path: ".date" },
+            { label: "Description", path: ".description" },
           ]}
           filter={filter}
         />

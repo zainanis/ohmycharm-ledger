@@ -15,7 +15,6 @@ const Modal = ({ onClose, name, id, handleDelete, who }) => {
           case "expenses":
             dispatch(deleteExpense({ _id: id }));
             break;
-
           case "customers":
             dispatch(deleteCustomer({ _id: id }));
             break;

@@ -16,13 +16,34 @@ const Mytable = ({ who = "items", data = [], header = [], filter = "All" }) => {
       : data.filter((item) => {
           return item.type === filter;
         });
-  useEffect(() => {
-    console.log("Data updated:", data);
-    console.log("Current filter:", filter);
-  }, [data, filter]);
+
+  const getValueFromPath = (obj, path) => {
+    if (!path) return "";
+
+    const value = path
+      .split(".")
+      .filter(Boolean)
+      .reduce(
+        (acc, key) => (acc && acc[key] !== undefined ? acc[key] : "-"),
+        obj
+      );
+
+    const dateFields = ["date", "orderDate"];
+    const isTargetDateField = dateFields.includes(path.replace(".", ""));
+
+    if (
+      isTargetDateField &&
+      typeof value === "string" &&
+      value.match(/^\d{4}-\d{2}-\d{2}T/)
+    ) {
+      return new Date(value).toLocaleDateString("en-GB");
+    }
+
+    return value;
+  };
 
   const handleEdit = (id) => {
-    navigate(`/expenses/${id}`);
+    navigate(`/${who}/${id}`);
   };
 
   return (
@@ -35,7 +56,7 @@ const Mytable = ({ who = "items", data = [], header = [], filter = "All" }) => {
                 key={index}
                 className="text-left px-6 py-3 text-xs text-pink-900 font-bold uppercase  "
               >
-                {head}
+                {head.label}
               </th>
             ))}
 
@@ -48,27 +69,45 @@ const Mytable = ({ who = "items", data = [], header = [], filter = "All" }) => {
         <tbody className="bg-white divide-y divide-pink-100">
           {filteredData.length > 0 ? (
             filteredData.map((item) => (
-              <tr key={item._id} className="text-pink-900 ">
-                <td className="px-6 py-4 ">{item.name}</td>
-                <td className="px-6 py-4  ">{item.type}</td>
-                <td className="px-6 py-4  ">${item.cost.toFixed(2)}</td>
-                <td className="px-6 py-4  ">{item.paymentMode || "-"}</td>
-                <td className="px-6 py-4  ">
-                  {new Date(item.date).toLocaleDateString("en-GB")}
-                </td>
-                <td className="px-6 py-4  ">{item.description || "-"}</td>
+              <tr
+                key={item._id}
+                className={
+                  who === "orders"
+                    ? "hover:bg-stone-100 text-pink-900"
+                    : " text-pink-900"
+                }
+                onClick={
+                  who === "orders"
+                    ? () => {
+                        navigate(`details/${item._id}`);
+                      }
+                    : undefined
+                }
+              >
+                {header.map((head, idx) => (
+                  <td key={idx} className="px-6 py-4">
+                    {getValueFromPath(item, head.path)}
+                  </td>
+                ))}
                 <td className="px-2 py-4   text-center flex gap-2 justify-center">
                   <button
                     className=" bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
-                    onClick={() => handleEdit(item._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(item._id);
+                    }}
                   >
                     Update
                   </button>
                   <button
                     className=" bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
-                    onClick={() =>
-                      setSelecteditem({ id: item._id, name: item.name })
-                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelecteditem({
+                        id: item._id,
+                        name: item.name || item.customerId.name,
+                      });
+                    }}
                   >
                     Delete
                   </button>
@@ -92,7 +131,7 @@ const Mytable = ({ who = "items", data = [], header = [], filter = "All" }) => {
           onClose={() => {
             setSelecteditem(null);
           }}
-          who="expenses"
+          who={who}
           id={selectedItem.id}
           name={selectedItem.name}
         />

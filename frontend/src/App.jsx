@@ -9,6 +9,7 @@ import Ledger from "./pages/Ledger";
 import { Createproduct } from "./components/Products/createproduct";
 import { Createcustomer } from "./components/Customers/createcustomer";
 import Createexpense from "./components/Expenses/CreateExpense";
+import Details from "./components/Orders/Details";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="expenses/:id" element={<Createexpense />} />
 
           <Route path="orders" element={<Orders />} />
+          <Route path="orders/details/:id" element={<Details />} />
           <Route path="ledger" element={<Ledger />} />
         </Route>
       </Routes>
