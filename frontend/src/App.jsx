@@ -17,13 +17,16 @@ function App() {
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<Products />} />
-          <Route path="products/:id" element={<Createproduct />} />
           <Route path="products/add" element={<Createproduct />} />
+          <Route path="products/:id" element={<Createproduct />} />
+
           <Route path="customers" element={<Customers />} />
           <Route path="customers/add" element={<Createcustomer />} />
           <Route path="customers/:id" element={<Createcustomer />} />
+
           <Route path="expenses" element={<Expenses />} />
           <Route path="expenses/add" element={<Createexpense />} />
+          <Route path="expenses/:id" element={<Createexpense />} />
 
           <Route path="orders" element={<Orders />} />
           <Route path="ledger" element={<Ledger />} />

@@ -3,6 +3,7 @@ import { MdCancel } from "react-icons/md";
 import axios from "axios";
 import { useDispatch } from "react-redux";
 import { deleteCustomer } from "../../state/customerSlice";
+import { deleteExpense } from "../../state/expenseSlice";
 
 const Modal = ({ onClose, name, id, handleDelete, who }) => {
   const dispatch = useDispatch();
@@ -10,10 +11,22 @@ const Modal = ({ onClose, name, id, handleDelete, who }) => {
     axios
       .delete(`http://localhost:5001/api/${who}/${id}`)
       .then(() => {
-        dispatch(deleteCustomer({ _id: id }));
-        if (who == "products") {
-          handleDelete(id);
+        switch (who) {
+          case "expenses":
+            dispatch(deleteExpense({ _id: id }));
+            break;
+
+          case "customers":
+            dispatch(deleteCustomer({ _id: id }));
+            break;
+          case "products":
+            dispatch(deleteCustomer({ _id: id }));
+            break;
+
+          default:
+            break;
         }
+
         onClose();
       })
       .catch((err) => {

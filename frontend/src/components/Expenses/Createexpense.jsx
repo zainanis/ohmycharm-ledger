@@ -4,7 +4,7 @@ import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addExpense } from "../../state/expenseSlice";
+import { addExpense, updateExpense } from "../../state/expenseSlice";
 
 const Createexpense = () => {
   const { id } = useParams();
@@ -19,78 +19,111 @@ const Createexpense = () => {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const allExpenses = useSelector((state) => state.expenses.allExpenses);
 
-  //   const allExpenses = useSelector((state) => state.expenses.allExpenses);
+  useEffect(() => {
+    if (id) {
+      const expense = allExpenses.find((expense) => expense._id === id);
 
-  //   useEffect(() => {
-  //     if (id) {
-  //       const expense = allExpenses.find((expense) => expense._id === id);
-
-  //       if (expense) {
-  //         setName(expense.name);
-  //         setAddress(expense.address);
-  //         setPhonenumber(expense.phoneNumber);
-  //         setEmail(expense.email);
-  //       }
-  //     }
-  //   }, []);
+      if (expense) {
+        setName(expense.name);
+        setDate(expense.date.slice(0, 10));
+        setCost(expense.cost);
+        setDescription(expense.description);
+        setExpensetype(expense.type);
+        setPaymentmode(expense.paymentMode);
+      }
+    }
+  }, [id, allExpenses]);
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (id == undefined) {
-      const newExpense = {
-        name,
-        cost: parseFloat(cost),
-        date,
-        description,
-        type: expenseType,
-        paymentMode,
-      };
-      console.log(newExpense);
-      const request = axios.post(
-        "http://localhost:5001/api/expenses",
-        newExpense
-      );
-      request
-        .then((res) => {
-          console.log("Customer Created Successfully.");
+    const expense = {
+      name,
+      cost: parseFloat(cost),
+      date,
+      description,
+      type: expenseType,
+      paymentMode,
+    };
+    console.log(expense);
+
+    const request = id
+      ? axios.put(`http://localhost:5001/api/expenses/${id}`, expense)
+      : axios.post("http://localhost:5001/api/expenses", expense);
+
+    request
+      .then((res) => {
+        if (id) {
+          console.log("Expense Updated Successfully.");
+          dispatch(updateExpense(res.data));
+        } else {
+          console.log("Expense Created Successfully.");
           dispatch(addExpense(res.data));
-          navigate("/expenses", { replace: true });
-        })
-        .catch((error) => {
-          console.log(error.response);
-        });
-    } else {
-      //   const updatedCustomer = {
-      //     name,
-      //     phoneNumber: parseFloat(phonenumber),
-      //     address,
-      //     email,
-      //   };
-      //   const request = axios.put(
-      //     `http://localhost:5001/api/customers/${id}`,
-      //     updatedCustomer
-      //   );
-      //   request
-      //     .then((res) => {
-      //       console.log("Customer Created Successfully.");
-      //       dispatch(updateCustomer(res.data));
-      //       navigate("/customers", { replace: true });
-      //     })
-      //     .catch((error) => {
-      //       console.log(error.response);
-      //     });
-    }
+        }
+
+        navigate("/expenses", { replace: true });
+      })
+      .catch((error) => {
+        console.log(error.response);
+      });
+
+    // if (id == undefined) {
+    //   const newExpense = {
+    //     name,
+    //     cost: parseFloat(cost),
+    //     date,
+    //     description,
+    //     type: expenseType,
+    //     paymentMode,
+    //   };
+    //   console.log(newExpense);
+    //   const request = axios.post(
+    //     "http://localhost:5001/api/expenses",
+    //     newExpense
+    //   );
+    //   request
+    //     .then((res) => {
+    //       console.log("Customer Created Successfully.");
+    //       dispatch(addExpense(res.data));
+    //       navigate("/expenses", { replace: true });
+    //     })
+    //     .catch((error) => {
+    //       console.log(error.response);
+    //     });
+    // } else {
+    //   const updatedExpense = {
+    //     name,
+    //     cost: parseFloat(cost),
+    //     date,
+    //     description,
+    //     type: expenseType,
+    //     paymentMode,
+    //   };
+    //   const request = axios.put(
+    //     `http://localhost:5001/api/expenses/${id}`,
+    //     updatedExpense
+    //   );
+    //   request
+    //     .then((res) => {
+    //       console.log("Expense Created Successfully.");
+    //       dispatch(updateCustomer(res.data));
+    //       navigate("/expenses", { replace: true });
+    //     })
+    //     .catch((error) => {
+    //       console.log(error.response);
+    //     });
+    // }
   };
 
   return (
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Add Customer</h1>
+          <h1 className="font-bold text-4xl text-pink-900">Add Expense</h1>
         </div>
         <div className="pl-5">
-          <NavLink to="/customers">
+          <NavLink to="/expenses">
             <FaChevronCircleLeft size={25} className=" text-pink-900 " />
           </NavLink>
         </div>
@@ -170,7 +203,7 @@ const Createexpense = () => {
               className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
               type="submit"
             >
-              Create Expense
+              {id ? "Update Expense" : "Create Expense"}
             </button>
           </div>
         </form>
