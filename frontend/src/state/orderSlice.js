@@ -15,7 +15,13 @@ const orderSlice = createSlice({
         return order._id === action.payload._id ? action.payload : order;
       });
     },
+    deleteOrder: (state, action) => {
+      state.allOrders = state.allOrders.filter((order) => {
+        return order._id !== action.payload._id;
+      });
+    },
   },
 });
-export const { setOrders, addOrder } = orderSlice.actions;
+export const { setOrders, addOrder, updateOrder, deleteOrder } =
+  orderSlice.actions;
 export default orderSlice.reducer;

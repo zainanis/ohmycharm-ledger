@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addExpense, updateExpense } from "../../state/expenseSlice";
 import { setCustomers } from "../../state/customerSlice";
 import { setProducts } from "../../state/productsSlice";
-import { addOrder } from "../../state/orderSlice";
+import { addOrder, updateOrder } from "../../state/orderSlice";
 
 const Createorders = () => {
   const { id } = useParams();
@@ -108,7 +108,7 @@ const Createorders = () => {
       .then((res) => {
         if (id) {
           console.log("Order Updated Successfully.");
-          //   dispatch(updateExpense(res.data));
+          dispatch(updateOrder(res.data));
         } else {
           console.log("Order Created Successfully.");
           dispatch(addOrder(res.data));

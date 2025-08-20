@@ -4,6 +4,7 @@ import axios from "axios";
 import { useDispatch } from "react-redux";
 import { deleteCustomer } from "../../state/customerSlice";
 import { deleteExpense } from "../../state/expenseSlice";
+import { deleteOrder } from "../../state/orderSlice";
 
 const Modal = ({ onClose, name, id, handleDelete, who }) => {
   const dispatch = useDispatch();
@@ -17,6 +18,9 @@ const Modal = ({ onClose, name, id, handleDelete, who }) => {
             break;
           case "customers":
             dispatch(deleteCustomer({ _id: id }));
+            break;
+          case "orders":
+            dispatch(deleteOrder({ _id: id }));
             break;
           case "products":
             dispatch(deleteCustomer({ _id: id }));
