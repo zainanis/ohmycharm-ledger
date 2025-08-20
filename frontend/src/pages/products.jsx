@@ -4,6 +4,8 @@ import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
 
 import Paginate from "../components/utils/Paginate";
+import { useDispatch, useSelector } from "react-redux";
+import { setProducts } from "../state/productsSlice";
 
 const Products = () => {
   // const [allProducts, SetallProducts] = useState([
@@ -80,10 +82,12 @@ const Products = () => {
   //     status: "Available",
   //   },
   // ]);
-  const [allProducts, SetallProducts] = useState([]);
+  // const [allProducts, SetallProducts] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
+  const allProducts = useSelector((state) => state.products.allProducts);
+  const dispatch = useDispatch();
 
   const handleDelete = (id) => {
     SetallProducts((prev) => prev.filter((product) => product._id !== id));
@@ -94,7 +98,8 @@ const Products = () => {
       .get("http://localhost:5001/api/products")
       .then((res) => {
         console.log(res);
-        SetallProducts(res.data);
+
+        dispatch(setProducts(res.data));
       })
       .catch((err) => {
         console.log(err);
@@ -149,7 +154,6 @@ const Products = () => {
         currentPage={currentPage}
         search={search}
         setCurrentPage={setCurrentPage}
-        handleDelete={handleDelete}
       />
     </div>
   );

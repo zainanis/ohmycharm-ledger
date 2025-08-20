@@ -8,7 +8,6 @@ const Paginate = ({
   selectedStatus,
   currentPage,
   setCurrentPage,
-  handleDelete,
   search,
 }) => {
   const itemsPerPage = 10;
@@ -35,9 +34,7 @@ const Paginate = ({
         {who == "Customer"
           ? currentItems.map((customer) => <Customercard {...customer} />)
           : who == "Product"
-          ? currentItems.map((product) => (
-              <ProductCard {...product} handleDelete={handleDelete} />
-            ))
+          ? currentItems.map((product) => <ProductCard {...product} />)
           : ""}
       </div>
 

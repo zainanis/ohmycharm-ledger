@@ -2,14 +2,7 @@ import { useNavigate } from "react-router";
 import Modal from "../utils/Modal";
 import { useState } from "react";
 
-const ProductCard = ({
-  _id,
-  name,
-  price,
-  description,
-  status,
-  handleDelete,
-}) => {
+const ProductCard = ({ _id, name, price, description, status }) => {
   const navigate = useNavigate();
   const [showModal, SetshowModal] = useState(false);
 
@@ -72,7 +65,6 @@ const ProductCard = ({
           }}
           name={name}
           id={_id}
-          handleDelete={handleDelete}
           who="products"
         />
       ) : (

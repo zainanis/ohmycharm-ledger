@@ -3,6 +3,8 @@ import axios from "axios";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
+import { useDispatch } from "react-redux";
+import { addProduct, updateProduct } from "../../state/productsSlice";
 
 export const Createproduct = () => {
   const { id } = useParams();
@@ -12,6 +14,8 @@ export const Createproduct = () => {
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (id != undefined) {
@@ -46,7 +50,13 @@ export const Createproduct = () => {
 
     request
       .then((res) => {
-        console.log("Product Created Successfully.");
+        if (id) {
+          console.log("Product Updated Successfully.");
+          dispatch(updateProduct(res.data));
+        } else {
+          console.log("Product Created Successfully.");
+          dispatch(addProduct(res.data));
+        }
         navigate("/products", { replace: true });
       })
       .catch((error) => {

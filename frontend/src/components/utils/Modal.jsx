@@ -5,8 +5,9 @@ import { useDispatch } from "react-redux";
 import { deleteCustomer } from "../../state/customerSlice";
 import { deleteExpense } from "../../state/expenseSlice";
 import { deleteOrder } from "../../state/orderSlice";
+import { deleteProduct } from "../../state/productsSlice";
 
-const Modal = ({ onClose, name, id, handleDelete, who }) => {
+const Modal = ({ onClose, name, id, who }) => {
   const dispatch = useDispatch();
   const doDelete = () => {
     axios
@@ -23,7 +24,7 @@ const Modal = ({ onClose, name, id, handleDelete, who }) => {
             dispatch(deleteOrder({ _id: id }));
             break;
           case "products":
-            dispatch(deleteCustomer({ _id: id }));
+            dispatch(deleteProduct({ _id: id }));
             break;
 
           default:
