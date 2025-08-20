@@ -22,6 +22,11 @@ const orderSchema = new mongoose.Schema(
     recieveDate: {
       type: Date,
     },
+    paymentMode: {
+      type: String,
+      enum: ["Cash", "Online"],
+      required: true,
+    },
     totalAmount: {
       type: Number,
       default: 0,

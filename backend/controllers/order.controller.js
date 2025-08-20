@@ -36,6 +36,7 @@ const createOrder = async (req, res) => {
           orderDate,
           sentDate,
           recieveDate,
+          paymentMode,
           totalAmount: 0,
         },
       ],
@@ -163,6 +164,8 @@ const updateOrderById = async (req, res) => {
         ...(orderDate && { orderDate }),
         ...(sentDate && { sentDate }),
         ...(recieveDate && { recieveDate }),
+        ...(paymentMode && { paymentMode }),
+
         ...(products && { totalAmount }),
       },
 

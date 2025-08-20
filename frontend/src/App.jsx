@@ -10,6 +10,7 @@ import { Createproduct } from "./components/Products/createproduct";
 import { Createcustomer } from "./components/Customers/createcustomer";
 import Createexpense from "./components/Expenses/CreateExpense";
 import Details from "./components/Orders/Details";
+import Createorders from "./components/Orders/Createorders";
 
 function App() {
   return (
@@ -31,6 +32,9 @@ function App() {
 
           <Route path="orders" element={<Orders />} />
           <Route path="orders/details/:id" element={<Details />} />
+          <Route path="orders/add" element={<Createorders />} />
+          <Route path="orders/:id" element={<Createorders />} />
+
           <Route path="ledger" element={<Ledger />} />
         </Route>
       </Routes>

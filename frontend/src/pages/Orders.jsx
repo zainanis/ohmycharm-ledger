@@ -72,6 +72,9 @@ const Orders = () => {
             { label: "Customer Name", path: ".customerId.name" },
             { label: "Status", path: ".status" },
             { label: "Order Date", path: ".orderDate" },
+            { label: "Sent Date", path: ".sentDate" },
+            { label: "Recieve Date", path: ".recieveDate" },
+            { label: "Payment Mode", path: ".paymentMode" },
             { label: "Total Amount", path: ".totalAmount" },
           ]}
           filter={filter}

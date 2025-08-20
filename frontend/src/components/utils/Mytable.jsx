@@ -28,7 +28,7 @@ const Mytable = ({ who = "items", data = [], header = [], filter = "All" }) => {
         obj
       );
 
-    const dateFields = ["date", "orderDate"];
+    const dateFields = ["date", "orderDate", "sentDate", "recieveDate"];
     const isTargetDateField = dateFields.includes(path.replace(".", ""));
 
     if (
