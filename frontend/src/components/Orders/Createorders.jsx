@@ -4,7 +4,6 @@ import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addExpense, updateExpense } from "../../state/expenseSlice";
 import { setCustomers } from "../../state/customerSlice";
 import { setProducts } from "../../state/productsSlice";
 import { addOrder, updateOrder } from "../../state/orderSlice";

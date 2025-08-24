@@ -86,7 +86,7 @@ const Mytable = ({
   };
 
   return (
-    <div className=" overflow-x-auto rounded-lg shadow border border-pink-200 w-full">
+    <div className="  overflow-x-auto rounded-lg shadow border border-pink-200 w-full">
       <table className=" bg-pink-200 w-full">
         <thead className="bg-pink-100">
           <tr>

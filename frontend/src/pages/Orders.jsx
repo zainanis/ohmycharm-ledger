@@ -21,20 +21,18 @@ const Orders = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    // if (allOrders.length === 0) {
-    axios
-      .get("http://localhost:5001/api/orders")
-      .then((res) => {
-        dispatch(setOrders(res.data));
-        console.log(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-    // }
+    if (allOrders.length === 0) {
+      axios
+        .get("http://localhost:5001/api/orders")
+        .then((res) => {
+          dispatch(setOrders(res.data));
+          console.log(res.data);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    }
   }, []);
-
-  // console.log(allOrders);
 
   return (
     <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between  ">
