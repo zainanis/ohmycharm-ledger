@@ -12,6 +12,11 @@ const Orders = () => {
   const allOrders = useSelector((state) => state.orders.allOrders);
 
   const [filter, setFilter] = useState("All");
+  const [filterBy, setFilterby] = useState("status");
+  const [orderBy, setOrderby] = useState("orderDate");
+
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const [search, setSearch] = useState("");
 
@@ -45,26 +50,123 @@ const Orders = () => {
           />
         </div>
 
-        <div className="flex justify-end px-5 gap-5 ">
-          <NavLink
-            className=" flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
-            to="add"
-          >
-            <FaPlus />
-            Add Orders
-          </NavLink>
+        <div className="flex justify-between px-5 gap-5 h-15 ">
+          <div className="flex gap-5 items-end">
+            <div className="flex gap-5 items-end">
+              <div>
+                <h2 className="font-medium">Order By :</h2>
+                <select
+                  value={orderBy}
+                  onChange={(e) => setOrderby(e.target.value)}
+                  className="border px-4 py-2 h-10 w-45  rounded border-stone-200 text-stone-500"
+                >
+                  <option value="orderDate">Order Date</option>
+                  <option value="sentDate">Sent Date</option>
+                  <option value="recieveDate">Recieve Date</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-5 items-end">
+              <div>
+                <h2 className="font-medium">From :</h2>
+                <input
+                  value={from}
+                  onChange={(e) => {
+                    const newFromDate = e.target.value;
+                    if (to && new Date(newFromDate) > new Date(to)) {
+                      alert("'From' date cannot be later than the 'To' date.");
+                      return;
+                    }
+                    setFrom(newFromDate);
+                  }}
+                  type="date"
+                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-5 items-end">
+              <div>
+                <h2 className="font-medium">To :</h2>
+                <input
+                  value={to}
+                  onChange={(e) => {
+                    const newToDate = e.target.value;
+                    if (from && new Date(newToDate) < new Date(from)) {
+                      alert(
+                        "The 'To' date cannot be earlier than the 'From' date."
+                      );
+                      return;
+                    }
+                    setTo(newToDate);
+                  }}
+                  min={from}
+                  type="date"
+                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
+                />
+              </div>
+            </div>
 
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="border px-4 py-2 rounded border-stone-200 text-stone-500"
-          >
-            <option value="All">All</option>
-            {/* <option value="Goods Purchase">Goods Purchase</option>
-            <option value="Advertisement">Advertisement</option> */}
-          </select>
+            <button
+              className=" flex items-center h-10 w-30 justify-center gap-2 px-4 py-2 rounded-2xl bg-red-600 text-white hover:bg-red-700 hover:shadow-lg"
+              onClick={() => {
+                setTo("");
+                setFrom("");
+              }}
+            >
+              Clear Dates
+            </button>
+          </div>
+
+          <div className="flex justify-end items-end px-5 gap-5 h-15 ">
+            <div className="flex gap-5 items-end">
+              <div>
+                <h2 className="font-medium">Filter By:</h2>
+                <select
+                  value={filterBy}
+                  onChange={(e) => {
+                    setFilterby(e.target.value);
+                    setFilter("All");
+                  }}
+                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
+                >
+                  <option value="status">Status</option>
+                  <option value="paymentMode">Payment Mode</option>
+                </select>
+              </div>
+
+              <div>
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="border px-4 py-2 h-10 w-45  rounded border-stone-200 text-stone-500"
+                >
+                  {filterBy === "status" ? (
+                    <>
+                      <option value="All">All</option>
+                      <option value="Placed">Placed</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Sent">Sent</option>
+                      <option value="Delivered">Delivered</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="All">All</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Online">Online</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            </div>
+            <NavLink
+              className=" flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
+              to="add"
+            >
+              <FaPlus />
+              Add Orders
+            </NavLink>
+          </div>
         </div>
-
         <Mytable
           who="orders"
           data={allOrders}
@@ -77,7 +179,11 @@ const Orders = () => {
             { label: "Payment Mode", path: ".paymentMode" },
             { label: "Total Amount", path: ".totalAmount" },
           ]}
+          filterBy={filterBy}
           filter={filter}
+          orderBy={orderBy}
+          from={from}
+          to={to}
         />
       </div>
     </div>

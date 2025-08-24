@@ -101,14 +101,6 @@ const Expenses = () => {
           </div>
 
           <div className="flex justify-end items-end px-5 gap-5 h-15 ">
-            <NavLink
-              className=" flex items-center h-10 w-38 justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
-              to="add"
-            >
-              <FaPlus />
-              Add Expense
-            </NavLink>
-
             <div className="flex gap-5 items-end">
               <div>
                 <h2 className="font-medium">Filter By:</h2>
@@ -147,6 +139,13 @@ const Expenses = () => {
                 </select>
               </div>
             </div>
+            <NavLink
+              className=" flex items-center h-10 w-38 justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
+              to="add"
+            >
+              <FaPlus />
+              Add Expense
+            </NavLink>
           </div>
         </div>
         <Mytable

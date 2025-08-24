@@ -1,7 +1,6 @@
 import { useState } from "react";
 
-import { useNavigate } from "react-router"; // If using react-router
-
+import { useNavigate } from "react-router";
 import Modal from "./Modal";
 
 const Mytable = ({
@@ -24,7 +23,7 @@ const Mytable = ({
       : data.filter((item) => {
           return filter.includes(item[filterBy]);
         });
-  console.log(from);
+
   if (orderBy) {
     filteredData = [...filteredData].sort((a, b) => {
       const aValue = new Date(a[orderBy]);
