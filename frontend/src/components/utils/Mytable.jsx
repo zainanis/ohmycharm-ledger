@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { FaEllipsisV } from "react-icons/fa";
+import { useState } from "react";
+
 import { useNavigate } from "react-router"; // If using react-router
 
 import Modal from "./Modal";
@@ -11,26 +10,36 @@ const Mytable = ({
   header = [],
   filter = "All",
   orderBy = null,
+  filterBy = "type",
+  from = null,
+  to = null,
 }) => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [selectedItem, setSelecteditem] = useState(null);
+  let filteredData;
 
-  let filteredData =
+  filteredData =
     filter === "All"
       ? data
       : data.filter((item) => {
-          return item.type === filter;
+          return filter.includes(item[filterBy]);
         });
+  console.log(from);
   if (orderBy) {
-    filteredData.sort((a, b) => {
+    filteredData = [...filteredData].sort((a, b) => {
       const aValue = new Date(a[orderBy]);
       const bValue = new Date(b[orderBy]);
 
-      // return aValue - bValue;
-      return bValue - aValue;
+      return aValue - bValue;
     });
   }
+
+  if (from && to) {
+    filteredData = [...filteredData].filter((item) => {
+      return item[orderBy] < to && item[orderBy] > from;
+    });
+  }
+
   let runningTotal = 0;
 
   const dataToRender =

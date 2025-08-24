@@ -4,11 +4,7 @@ import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
 import Mytable from "../components/utils/Mytable.jsx";
 
-import { useDispatch, useSelector } from "react-redux";
-import { setExpenses } from "../state/expenseSlice.js";
-
 const Ledger = () => {
-  const dispatch = useDispatch();
   const [ledger, setLedger] = useState([]);
 
   const [filter, setFilter] = useState("All");
@@ -56,8 +52,8 @@ const Ledger = () => {
             className="border px-4 py-2 rounded border-stone-200 text-stone-500"
           >
             <option value="All">All</option>
-            <option value="Goods Purchase">Goods Purchase</option>
-            <option value="Advertisement">Advertisement</option>
+            <option value="Profit">Profits</option>
+            <option value="Advertisement,Goods Purchases">Expenses</option>
           </select>
         </div>
         <Mytable
