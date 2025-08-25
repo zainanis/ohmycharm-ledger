@@ -107,10 +107,13 @@ const Createorders = () => {
       .then((res) => {
         if (id) {
           console.log("Order Updated Successfully.");
-          dispatch(updateOrder(res.data));
+          dispatch(updateOrder(res.data.order));
         } else {
           console.log("Order Created Successfully.");
-          dispatch(addOrder(res.data));
+          console.log(res.data);
+          let order = res.data.order;
+          order["customerId"] = { customerId: customerId };
+          dispatch(addOrder(res.data.order));
         }
 
         navigate("/orders", { replace: true });

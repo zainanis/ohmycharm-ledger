@@ -8,6 +8,7 @@ const Details = () => {
   const [order, setOrder] = useState({});
   const [products, setProducts] = useState([]);
   const [customer, setCustomer] = useState({});
+  const [delivery, setDelivery] = useState("0");
   const totalQuantity = products?.reduce(
     (acc, product) => acc + product.quantity,
     0
@@ -125,14 +126,31 @@ const Details = () => {
                 </tr>
               ))}
 
-              <tr className="border-t font-bold">
-                <td className="p-3 ">Total Price</td>
-                <td className="p-3">-</td>
-                <td className="p-3">{totalQuantity}</td>
+              <tr className="border-t-2 ">
+                <td className="p-3 font-bold">Total Price</td>
+                <td className="p-3"></td>
+                <td className="p-3"></td>
                 <td className="p-3">
                   {order?.totalAmount != null
                     ? order.totalAmount.toFixed(2) + " PKR"
                     : "N/A"}
+                </td>
+              </tr>
+              <tr className="border-t ">
+                <td className="p-3 font-bold">Delivry</td>
+                <td className="p-3"></td>
+                <td className="p-3"></td>
+                <td className="p-3">
+                  <input
+                    type="text"
+                    placeholder="Delivery"
+                    value={delivery}
+                    onChange={(e) => {
+                      setDelivery(e.target.value);
+                    }}
+                    className="w-20"
+                  />
+                  <span>PKR</span>
                 </td>
               </tr>
             </tbody>
