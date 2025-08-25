@@ -8,6 +8,10 @@ const Details = () => {
   const [order, setOrder] = useState({});
   const [products, setProducts] = useState([]);
   const [customer, setCustomer] = useState({});
+  const totalQuantity = products?.reduce(
+    (acc, product) => acc + product.quantity,
+    0
+  );
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,15 +78,18 @@ const Details = () => {
         <p>
           <strong>Payment Mode:</strong> {order.paymentMode}
         </p>
-        {/* <p>
-          <strong>Order Date:</strong> {formatDate(order.orderDate)}
+        <p>
+          <strong>Order Date:</strong>
+          {new Date(order.orderDate).toLocaleDateString("en-GB")}
         </p>
         <p>
-          <strong>Sent Date:</strong> {formatDate(order.sentDate)}
+          <strong>Sent Date:</strong>
+          {new Date(order.sentDate).toLocaleDateString("en-GB")}
         </p>
         <p>
-          <strong>Receive Date:</strong> {formatDate(order.recieveDate)}
-        </p> */}
+          <strong>Receive Date:</strong>
+          {new Date(order.recieveDate).toLocaleDateString("en-GB")}
+        </p>
       </div>
 
       {/* Products Table */}
@@ -117,6 +124,17 @@ const Details = () => {
                   </td>
                 </tr>
               ))}
+
+              <tr className="border-t font-bold">
+                <td className="p-3 ">Total Price</td>
+                <td className="p-3">-</td>
+                <td className="p-3">{totalQuantity}</td>
+                <td className="p-3">
+                  {order?.totalAmount != null
+                    ? order.totalAmount.toFixed(2) + " PKR"
+                    : "N/A"}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
