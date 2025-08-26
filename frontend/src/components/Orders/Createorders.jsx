@@ -81,6 +81,7 @@ const Createorders = () => {
         });
     }
   }, [allProducts, id]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const products = selectedProducts.map((product) => {
@@ -99,6 +100,8 @@ const Createorders = () => {
       products: products,
     };
 
+    const selectedCustomer = allCustomers.find((c) => c._id === customerId);
+
     const request = id
       ? axios.put(`http://localhost:5001/api/orders/${id}`, order)
       : axios.post("http://localhost:5001/api/orders", order);
@@ -107,13 +110,16 @@ const Createorders = () => {
       .then((res) => {
         if (id) {
           console.log("Order Updated Successfully.");
-          dispatch(updateOrder(res.data.order));
+          dispatch(updateOrder(res.data));
         } else {
           console.log("Order Created Successfully.");
           console.log(res.data);
           let order = res.data.order;
-          order["customerId"] = { customerId: customerId };
-          dispatch(addOrder(res.data.order));
+          order.customerId = {
+            _id: customerId,
+            name: selectedCustomer?.name || "",
+          };
+          dispatch(addOrder(order));
         }
 
         navigate("/orders", { replace: true });
