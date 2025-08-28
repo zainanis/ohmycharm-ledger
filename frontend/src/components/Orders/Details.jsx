@@ -1,14 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, NavLink } from "react-router";
 import axios from "axios";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { FaChevronCircleLeft } from "react-icons/fa";
 
 const Details = () => {
   const { id } = useParams();
+  const printRef = useRef();
   const [order, setOrder] = useState({});
   const [products, setProducts] = useState([]);
   const [customer, setCustomer] = useState({});
   const [delivery, setDelivery] = useState("0");
+  const [unHide, setUnHide] = useState(true);
   const totalQuantity = products?.reduce(
     (acc, product) => acc + product.quantity,
     0
@@ -39,6 +43,30 @@ const Details = () => {
     fetchData();
   }, [id]);
 
+  const handleDownloadPDF = () => {
+    const input = printRef.current;
+
+    setUnHide(false); // Hide UI before capture
+
+    setTimeout(() => {
+      html2canvas(input, {
+        scale: 2,
+        useCORS: true,
+      }).then((canvas) => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`order-${order._id || "invoice"}.pdf`);
+
+        setUnHide(true); // Restore UI
+      });
+    }, 300);
+  };
   if (!order) {
     return (
       <div className="flex justify-center items-center min-h-[70vh]">
@@ -48,13 +76,18 @@ const Details = () => {
   }
 
   return (
-    <div className="bg-white flex flex-col gap-5 rounded-lg shadow p-6">
+    <div
+      className="bg-white flex flex-col gap-5 rounded-lg shadow p-6"
+      ref={printRef}
+    >
       {/* Header */}
       <div className="flex flex-col gap-5">
         <div className="border-b-2 border-stone-200 px-5 py-5 flex items-center">
-          <NavLink to="/orders">
-            <FaChevronCircleLeft size={25} className="text-pink-900" />
-          </NavLink>
+          {unHide && (
+            <NavLink to="/orders">
+              <FaChevronCircleLeft size={25} className="text-pink-900" />
+            </NavLink>
+          )}
           <h1 className="font-bold text-4xl text-pink-900 text-center flex-1">
             Order Details
           </h1>
@@ -63,9 +96,12 @@ const Details = () => {
 
       {/* Order Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-gray-700">
-        <p>
-          <strong>Order ID: </strong> {order._id}
-        </p>
+        {unHide && (
+          <p>
+            <strong>Order ID: </strong> {order._id}
+          </p>
+        )}
+
         <p>
           <strong>Customer Name: </strong> {customer.name}
         </p>
@@ -83,14 +119,18 @@ const Details = () => {
           <strong>Order Date:</strong>
           {new Date(order.orderDate).toLocaleDateString("en-GB")}
         </p>
-        <p>
-          <strong>Sent Date:</strong>
-          {new Date(order.sentDate).toLocaleDateString("en-GB")}
-        </p>
-        <p>
-          <strong>Receive Date:</strong>
-          {new Date(order.recieveDate).toLocaleDateString("en-GB")}
-        </p>
+        {unHide && (
+          <>
+            <p>
+              <strong>Sent Date:</strong>
+              {new Date(order.sentDate).toLocaleDateString("en-GB")}
+            </p>
+            <p>
+              <strong>Receive Date:</strong>
+              {new Date(order.recieveDate).toLocaleDateString("en-GB")}
+            </p>
+          </>
+        )}
       </div>
 
       {/* Products Table */}
@@ -137,7 +177,7 @@ const Details = () => {
                 </td>
               </tr>
               <tr className="border-t ">
-                <td className="p-3 font-bold">Delivry</td>
+                <td className="p-3 font-bold">Delivery</td>
                 <td className="p-3"></td>
                 <td className="p-3"></td>
                 <td className="p-3">
@@ -156,6 +196,12 @@ const Details = () => {
             </tbody>
           </table>
         </div>
+        {/* <button
+          className=" bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
+          onClick={handleDownloadPDF}
+        >
+          Print
+        </button> */}
       </div>
     </div>
   );
