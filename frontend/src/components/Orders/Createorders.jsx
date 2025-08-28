@@ -11,17 +11,17 @@ import { addOrder, updateOrder } from "../../state/orderSlice";
 const Createorders = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const [expense, setExpense] = useState({});
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(false);
   const [customerId, setCustomerid] = useState("");
   const [orderStatus, setOrderstatus] = useState("");
   const [orderDate, setOrderdate] = useState("");
   const [sentDate, setSentdate] = useState("");
   const [recieveDate, setRecievedate] = useState("");
   const [selectedProducts, setSelectedproducts] = useState([]);
-
   const [paymentMode, setPaymentmode] = useState("");
+
   const allCustomers = useSelector((state) => state.customers.allCustomers);
   const allProducts = useSelector((state) => state.products.allProducts);
 
@@ -29,25 +29,15 @@ const Createorders = () => {
     if (allCustomers.length === 0) {
       axios
         .get("http://localhost:5001/api/customers")
-        .then((res) => {
-          console.log(res);
-          dispatch(setCustomers(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+        .then((res) => dispatch(setCustomers(res.data)))
+        .catch((err) => console.log(err));
     }
 
     if (allProducts.length === 0) {
       axios
         .get("http://localhost:5001/api/products")
-        .then((res) => {
-          console.log(res);
-          dispatch(setProducts(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+        .then((res) => dispatch(setProducts(res.data)))
+        .catch((err) => console.log(err));
     }
 
     if (id && allProducts.length !== 0) {
@@ -56,13 +46,14 @@ const Createorders = () => {
         .then((res) => {
           const order = res.data.order;
           const products = res.data.products;
-          console.log(products);
+
           setCustomerid(order.customerId || "");
           setOrderstatus(order.status || "");
           setOrderdate(order.orderDate?.slice(0, 10) || "");
           setSentdate(order.sentDate?.slice(0, 10) || "");
           setRecievedate(order.recieveDate?.slice(0, 10) || "");
           setPaymentmode(order.paymentMode || "");
+
           const selected = products.map((orderedProduct) => {
             const fullProduct = allProducts.find(
               (p) => p._id === orderedProduct.productId._id
@@ -74,16 +65,14 @@ const Createorders = () => {
           });
 
           setSelectedproducts(selected);
-          //   setPaymentmode(res.data.paymentMode);
         })
-        .catch((err) => {
-          console.log(err);
-        });
+        .catch((err) => console.log(err));
     }
   }, [allProducts, id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!orderDate) {
       alert("Order Date is required.");
       return;
@@ -101,62 +90,75 @@ const Createorders = () => {
       alert("Receive Date is required.");
       return;
     }
-    const products = selectedProducts.map((product) => {
-      return {
-        _id: product._id,
-        quantity: Math.max(1, Number(product.quantity)),
-      };
-    });
+
+    const products = selectedProducts.map((product) => ({
+      _id: product._id,
+      quantity: Math.max(1, Number(product.quantity)),
+    }));
+
     const order = {
-      customerId: customerId,
+      customerId,
       status: orderStatus,
-      orderDate: orderDate,
+      orderDate,
       sentDate: sentDate === "" ? undefined : sentDate,
       recieveDate: recieveDate === "" ? undefined : recieveDate,
-      paymentMode: paymentMode,
-      products: products,
+      paymentMode,
+      products,
     };
 
     const selectedCustomer = allCustomers.find((c) => c._id === customerId);
-
     const request = id
       ? axios.put(`http://localhost:5001/api/orders/${id}`, order)
       : axios.post("http://localhost:5001/api/orders", order);
 
+    setLoading(true);
+
     request
       .then((res) => {
+        const orderRes = id ? res.data : res.data.order;
+        orderRes.customerId = {
+          _id: customerId,
+          name: selectedCustomer?.name || "",
+        };
+
         if (id) {
+          dispatch(updateOrder(orderRes));
           console.log("Order Updated Successfully.");
-          console.log(res.data);
-          let order = res.data;
-          order.customerId = {
-            _id: customerId,
-            name: selectedCustomer?.name || "",
-          };
-          dispatch(updateOrder(res.data));
         } else {
+          dispatch(addOrder(orderRes));
           console.log("Order Created Successfully.");
-          console.log(res.data);
-          let order = res.data.order;
-          order.customerId = {
-            _id: customerId,
-            name: selectedCustomer?.name || "",
-          };
-          dispatch(addOrder(order));
         }
 
         navigate("/orders", { replace: true });
       })
-      .catch((error) => {
-        console.log(error.response);
+      .catch((error) => console.log(error.response))
+      .finally(() => {
+        setLoading(false);
       });
   };
 
   return (
-    <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
+    <div className="relative bg-white rounded-lg shadow flex flex-col gap-2 p-2">
+      {/* Overlay for loading */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+          {id ? (
+            <div className="text-pink-800 font-bold text-xl animate-pulse">
+              Loading...
+            </div>
+          ) : (
+            <div className="text-pink-800 font-bold text-xl animate-pulse">
+              Submitting...
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Add Order</h1>
+          <h1 className="font-bold text-4xl text-pink-900">
+            {id ? "Edit Order" : "Add Order"}
+          </h1>
         </div>
         <div className="pl-5">
           <NavLink to="/orders">
@@ -164,42 +166,40 @@ const Createorders = () => {
           </NavLink>
         </div>
       </div>
-      <div className=" flex flex-col items-center justify-center  min-h-[75vh]">
+
+      <div className="flex flex-col items-center justify-center min-h-[75vh]">
         <form
           onSubmit={handleSubmit}
-          className=" flex flex-col gap-2 justify-between min-h-100 w-110"
+          className="relative flex flex-col gap-2 justify-between min-h-100 w-110"
         >
+          {/* Customer Name */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="Name">Customer Name:</label>
-
+            <label>Customer Name:</label>
             <select
               value={customerId}
+              onChange={(e) => setCustomerid(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              onChange={(e) => {
-                setCustomerid(e.target.value);
-              }}
               required
+              disabled={loading}
             >
-              <option value="">Select an Customer </option>
-
-              {allCustomers.map((customer) => {
-                return (
-                  <option key={customer._id} value={customer._id}>
-                    {customer.name}
-                  </option>
-                );
-              })}
+              <option value="">Select a Customer</option>
+              {allCustomers.map((customer) => (
+                <option key={customer._id} value={customer._id}>
+                  {customer.name}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Order Status */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="expensetype">Order Status :</label>
-
+            <label>Order Status:</label>
             <select
-              required
               value={orderStatus}
               onChange={(e) => setOrderstatus(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              required
+              disabled={loading}
             >
               <option value="">Select status</option>
               <option value="Placed">Placed</option>
@@ -209,60 +209,65 @@ const Createorders = () => {
             </select>
           </div>
 
+          {/* Order Date */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Order Date:</label>
+            <label>Order Date:</label>
             <input
-              required
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
               value={orderDate}
               onChange={(e) => setOrderdate(e.target.value)}
+              className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              required
+              disabled={loading}
             />
           </div>
 
+          {/* Sent Date */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Sent Date:</label>
+            <label>Sent Date:</label>
             <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
-              min={orderDate}
               value={sentDate}
-              required={!!recieveDate}
+              min={orderDate}
               onChange={(e) => setSentdate(e.target.value)}
+              className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              required={!!recieveDate}
+              disabled={loading}
             />
           </div>
 
+          {/* Receive Date */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Recieve Date:</label>
+            <label>Receive Date:</label>
             <input
-              id="recieveDate"
-              min={sentDate}
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
               value={recieveDate}
+              min={sentDate}
               onChange={(e) => setRecievedate(e.target.value)}
+              className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              disabled={loading}
             />
           </div>
 
+          {/* Payment Mode */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="expensetype">Payment Mode :</label>
-
+            <label>Payment Mode:</label>
             <select
               value={paymentMode}
               onChange={(e) => setPaymentmode(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              disabled={loading}
             >
-              <option value="All">Select an payment mode</option>
+              <option value="All">Select a payment mode</option>
               <option value="Cash">Cash</option>
               <option value="Online">Online</option>
             </select>
           </div>
 
+          {/* Products */}
           <div className="flex flex-col text-pink-900">
-            <label htmlFor="products">Products:</label>
-
+            <label>Products:</label>
             <select
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
               onChange={(e) => {
                 const selectedId = e.target.value;
                 const selectedProduct = allProducts.find(
@@ -281,6 +286,8 @@ const Createorders = () => {
 
                 e.target.value = "";
               }}
+              className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              disabled={loading}
             >
               <option value="">Select a product</option>
               {allProducts.map((product) => (
@@ -302,12 +309,11 @@ const Createorders = () => {
                 >
                   {product.name}
                   <input
-                    min={1}
                     type="number"
+                    min={1}
                     value={product.quantity ?? 1}
                     onChange={(e) => {
                       const inputValue = e.target.value;
-
                       setSelectedproducts((prev) =>
                         prev.map((p) =>
                           p._id === product._id
@@ -321,16 +327,17 @@ const Createorders = () => {
                       );
                     }}
                     className="w-16 px-2 py-1 rounded text-center text-pink-900"
+                    disabled={loading}
                   />
-
                   <button
                     type="button"
-                    className="text-pink-600 hover:text-pink-900 font-bold text-lg"
                     onClick={() =>
                       setSelectedproducts((prev) =>
                         prev.filter((p) => p._id !== product._id)
                       )
                     }
+                    className="text-pink-600 hover:text-pink-900 font-bold text-lg"
+                    disabled={loading}
                   >
                     &times;
                   </button>
@@ -339,12 +346,14 @@ const Createorders = () => {
             </div>
           </div>
 
+          {/* Submit Button */}
           <div className="flex justify-center">
             <button
-              className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
+              className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              {id ? "Update Order" : "Create Order"}
+              {loading ? "Submitting..." : id ? "Update Order" : "Create Order"}
             </button>
           </div>
         </form>

@@ -9,7 +9,8 @@ import { addProduct, updateProduct } from "../../state/productsSlice";
 export const Createproduct = () => {
   const { id } = useParams();
   const [product, Setproduct] = useState({});
-  const [loading, Setloading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [name, setName] = useState("");
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
@@ -19,7 +20,7 @@ export const Createproduct = () => {
 
   useEffect(() => {
     if (id != undefined) {
-      Setloading(true);
+      setLoading(true);
       axios
         .get(`http://localhost:5001/api/products/${id}`)
         .then((res) => {
@@ -28,11 +29,12 @@ export const Createproduct = () => {
           setDescription(res.data.description || "");
           setStatus(res.data.status || "Available");
           Setproduct(res.data);
-          Setloading(false);
         })
         .catch((err) => {
           console.log(err.message);
-          Setloading(false);
+        })
+        .finally(() => {
+          setLoading(false);
         });
     }
   }, [id]);
@@ -47,7 +49,7 @@ export const Createproduct = () => {
     const request = id
       ? axios.put(`http://localhost:5001/api/products/${id}`, newPost)
       : axios.post("http://localhost:5001/api/products", newPost);
-
+    setLoading(true);
     request
       .then((res) => {
         if (id) {
@@ -61,11 +63,28 @@ export const Createproduct = () => {
       })
       .catch((error) => {
         console.log(error.response);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
   return (
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+          {id ? (
+            <div className="text-pink-800 font-bold text-xl animate-pulse">
+              Loading...
+            </div>
+          ) : (
+            <div className="text-pink-800 font-bold text-xl animate-pulse">
+              Submitting...
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
           <h1 className="font-bold text-4xl text-pink-900">

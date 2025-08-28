@@ -4,11 +4,16 @@ import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addExpense, updateExpense } from "../../state/expenseSlice";
+import {
+  addExpense,
+  setExpenses,
+  updateExpense,
+} from "../../state/expenseSlice";
 
 const Createexpense = () => {
   const { id } = useParams();
   const [expense, setExpense] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -23,8 +28,22 @@ const Createexpense = () => {
 
   useEffect(() => {
     if (id) {
+      if (allExpenses.length == 0) {
+        setLoading(true);
+        axios
+          .get("http://localhost:5001/api/expenses")
+          .then((res) => {
+            dispatch(setExpenses(res.data));
+            console.log(res.data);
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      }
       const expense = allExpenses.find((expense) => expense._id === id);
-
       if (expense) {
         setName(expense.name);
         setDate(expense.date.slice(0, 10));
@@ -51,7 +70,7 @@ const Createexpense = () => {
     const request = id
       ? axios.put(`http://localhost:5001/api/expenses/${id}`, expense)
       : axios.post("http://localhost:5001/api/expenses", expense);
-
+    setLoading(true);
     request
       .then((res) => {
         if (id) {
@@ -66,11 +85,27 @@ const Createexpense = () => {
       })
       .catch((error) => {
         console.log(error.response);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
   return (
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+          {id ? (
+            <div className="text-pink-800 font-bold text-xl animate-pulse">
+              Loading...
+            </div>
+          ) : (
+            <div className="text-pink-800 font-bold text-xl animate-pulse">
+              Submitting...
+            </div>
+          )}
+        </div>
+      )}
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
           <h1 className="font-bold text-4xl text-pink-900">Add Expense</h1>
