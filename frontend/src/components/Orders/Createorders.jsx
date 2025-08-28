@@ -84,6 +84,23 @@ const Createorders = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!orderDate) {
+      alert("Order Date is required.");
+      return;
+    }
+
+    if (
+      (recieveDate || orderStatus === "Sent" || orderStatus === "Delivered") &&
+      !sentDate
+    ) {
+      alert("Sent Date is required.");
+      return;
+    }
+
+    if (orderStatus === "Delivered" && !recieveDate) {
+      alert("Receive Date is required.");
+      return;
+    }
     const products = selectedProducts.map((product) => {
       return {
         _id: product._id,
@@ -110,6 +127,12 @@ const Createorders = () => {
       .then((res) => {
         if (id) {
           console.log("Order Updated Successfully.");
+          console.log(res.data);
+          let order = res.data;
+          order.customerId = {
+            _id: customerId,
+            name: selectedCustomer?.name || "",
+          };
           dispatch(updateOrder(res.data));
         } else {
           console.log("Order Created Successfully.");
@@ -155,6 +178,7 @@ const Createorders = () => {
               onChange={(e) => {
                 setCustomerid(e.target.value);
               }}
+              required
             >
               <option value="">Select an Customer </option>
 
@@ -188,6 +212,7 @@ const Createorders = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Description">Order Date:</label>
             <input
+              required
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
               value={orderDate}
@@ -200,7 +225,9 @@ const Createorders = () => {
             <input
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
+              min={orderDate}
               value={sentDate}
+              required={!!recieveDate}
               onChange={(e) => setSentdate(e.target.value)}
             />
           </div>
@@ -208,6 +235,8 @@ const Createorders = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Description">Recieve Date:</label>
             <input
+              id="recieveDate"
+              min={sentDate}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
               value={recieveDate}

@@ -67,53 +67,6 @@ const Createexpense = () => {
       .catch((error) => {
         console.log(error.response);
       });
-
-    // if (id == undefined) {
-    //   const newExpense = {
-    //     name,
-    //     cost: parseFloat(cost),
-    //     date,
-    //     description,
-    //     type: expenseType,
-    //     paymentMode,
-    //   };
-    //   console.log(newExpense);
-    //   const request = axios.post(
-    //     "http://localhost:5001/api/expenses",
-    //     newExpense
-    //   );
-    //   request
-    //     .then((res) => {
-    //       console.log("Customer Created Successfully.");
-    //       dispatch(addExpense(res.data));
-    //       navigate("/expenses", { replace: true });
-    //     })
-    //     .catch((error) => {
-    //       console.log(error.response);
-    //     });
-    // } else {
-    //   const updatedExpense = {
-    //     name,
-    //     cost: parseFloat(cost),
-    //     date,
-    //     description,
-    //     type: expenseType,
-    //     paymentMode,
-    //   };
-    //   const request = axios.put(
-    //     `http://localhost:5001/api/expenses/${id}`,
-    //     updatedExpense
-    //   );
-    //   request
-    //     .then((res) => {
-    //       console.log("Expense Created Successfully.");
-    //       dispatch(updateCustomer(res.data));
-    //       navigate("/expenses", { replace: true });
-    //     })
-    //     .catch((error) => {
-    //       console.log(error.response);
-    //     });
-    // }
   };
 
   return (
@@ -136,6 +89,7 @@ const Createexpense = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Name">Name:</label>
             <input
+              required
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="text"
               value={name}
@@ -145,6 +99,7 @@ const Createexpense = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Price">Cost:</label>
             <input
+              required
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="number"
               value={cost}
@@ -154,6 +109,7 @@ const Createexpense = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Description">Expense Date:</label>
             <input
+              required
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="date"
               value={date}
@@ -174,6 +130,7 @@ const Createexpense = () => {
             <label htmlFor="expensetype">Expense Type :</label>
 
             <select
+              required
               value={expenseType}
               onChange={(e) => setExpensetype(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
@@ -188,6 +145,7 @@ const Createexpense = () => {
             <label htmlFor="expensetype">Payment Mode :</label>
 
             <select
+              required
               value={paymentMode}
               onChange={(e) => setPaymentmode(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"

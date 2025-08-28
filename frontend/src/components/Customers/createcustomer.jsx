@@ -100,6 +100,7 @@ export const Createcustomer = () => {
             <input
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="text"
+              required
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -109,6 +110,7 @@ export const Createcustomer = () => {
             <input
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="number"
+              required
               value={phonenumber}
               onChange={(e) => setPhonenumber(e.target.value)}
             />
@@ -118,6 +120,7 @@ export const Createcustomer = () => {
             <input
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="text"
+              required
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />

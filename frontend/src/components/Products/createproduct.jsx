@@ -86,6 +86,7 @@ export const Createproduct = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Name">Name:</label>
             <input
+              required
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="text"
               value={name}
@@ -95,6 +96,8 @@ export const Createproduct = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Price">Price:</label>
             <input
+              required
+              min="1"
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               type="number"
               value={price}
@@ -114,6 +117,8 @@ export const Createproduct = () => {
           <div className="flex flex-col text-pink-900">
             <label htmlFor="Status">Status:</label>
             <select
+              required
+              defaultValue="Available"
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
