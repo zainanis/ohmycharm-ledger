@@ -7,6 +7,7 @@ const Ledger = () => {
 
   const [filter, setFilter] = useState("All");
   const [filterBy, setFilterby] = useState("type");
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -14,6 +15,8 @@ const Ledger = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    setLoading({ loading: true, what: "Ledger" });
+
     axios
       .get("http://localhost:5001/api/ledger")
       .then((res) => {
@@ -22,6 +25,9 @@ const Ledger = () => {
       })
       .catch((err) => {
         console.log(err);
+      })
+      .finally(() => {
+        setLoading({ loading: false, what: null });
       });
   }, []);
 
@@ -138,6 +144,7 @@ const Ledger = () => {
         <Mytable
           who="ledger"
           data={ledger}
+          loading={loading}
           header={[
             { label: "Source", path: ".source" },
             { label: "Payment Mode", path: ".paymentMode" },

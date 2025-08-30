@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import Modal from "./Modal";
 
 const Mytable = ({
+  loading,
   who = "items",
   data = [],
   header = [],
@@ -110,7 +111,16 @@ const Mytable = ({
         </thead>
 
         <tbody className="bg-white divide-y divide-pink-100">
-          {dataToRender.length > 0 ? (
+          {loading.loading ? (
+            <tr>
+              <td
+                colSpan={header.length + 1}
+                className="px-6 py-4 text-center text-gray-500"
+              >
+                Loading {loading.what}...
+              </td>
+            </tr>
+          ) : dataToRender.length > 0 ? (
             dataToRender.map((item) => (
               <tr
                 key={item._id}

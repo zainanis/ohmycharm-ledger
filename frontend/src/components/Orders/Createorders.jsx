@@ -13,7 +13,7 @@ const Createorders = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({ loading: false, what: null });
   const [customerId, setCustomerid] = useState("");
   const [orderStatus, setOrderstatus] = useState("");
   const [orderDate, setOrderdate] = useState("");
@@ -27,20 +27,27 @@ const Createorders = () => {
 
   useEffect(() => {
     if (allCustomers.length === 0) {
+      setLoading({ loading: true, what: "data" });
       axios
         .get("http://localhost:5001/api/customers")
         .then((res) => dispatch(setCustomers(res.data)))
-        .catch((err) => console.log(err));
+        .catch((err) => console.log(err))
+        .finally(() => setLoading({ loading: false, what: null }));
     }
 
     if (allProducts.length === 0) {
+      setLoading({ loading: true, what: "data" });
+
       axios
         .get("http://localhost:5001/api/products")
         .then((res) => dispatch(setProducts(res.data)))
-        .catch((err) => console.log(err));
+        .catch((err) => console.log(err))
+        .finally(() => setLoading({ loading: false, what: null }));
     }
 
     if (id && allProducts.length !== 0) {
+      setLoading({ loading: true, what: "data" });
+
       axios
         .get(`http://localhost:5001/api/orders/${id}`)
         .then((res) => {
@@ -66,7 +73,8 @@ const Createorders = () => {
 
           setSelectedproducts(selected);
         })
-        .catch((err) => console.log(err));
+        .catch((err) => console.log(err))
+        .finally(() => setLoading({ loading: false, what: null }));
     }
   }, [allProducts, id]);
 
@@ -111,7 +119,7 @@ const Createorders = () => {
       ? axios.put(`http://localhost:5001/api/orders/${id}`, order)
       : axios.post("http://localhost:5001/api/orders", order);
 
-    setLoading(true);
+    setLoading({ loading: true, what: "submitting" });
 
     request
       .then((res) => {
@@ -133,16 +141,16 @@ const Createorders = () => {
       })
       .catch((error) => console.log(error.response))
       .finally(() => {
-        setLoading(false);
+        setLoading({ loading: false, what: null });
       });
   };
 
   return (
     <div className="relative bg-white rounded-lg shadow flex flex-col gap-2 p-2">
       {/* Overlay for loading */}
-      {loading && (
+      {loading.loading && (
         <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          {id ? (
+          {loading.what == "data" ? (
             <div className="text-pink-800 font-bold text-xl animate-pulse">
               Loading...
             </div>
@@ -180,7 +188,7 @@ const Createorders = () => {
               onChange={(e) => setCustomerid(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               required
-              disabled={loading}
+              disabled={loading.loading}
             >
               <option value="">Select a Customer</option>
               {allCustomers.map((customer) => (
@@ -199,7 +207,7 @@ const Createorders = () => {
               onChange={(e) => setOrderstatus(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               required
-              disabled={loading}
+              disabled={loading.loading}
             >
               <option value="">Select status</option>
               <option value="Placed">Placed</option>
@@ -218,7 +226,7 @@ const Createorders = () => {
               onChange={(e) => setOrderdate(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               required
-              disabled={loading}
+              disabled={loading.loading}
             />
           </div>
 
@@ -232,7 +240,7 @@ const Createorders = () => {
               onChange={(e) => setSentdate(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
               required={!!recieveDate}
-              disabled={loading}
+              disabled={loading.loading}
             />
           </div>
 
@@ -245,7 +253,7 @@ const Createorders = () => {
               min={sentDate}
               onChange={(e) => setRecievedate(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              disabled={loading}
+              disabled={loading.loading}
             />
           </div>
 
@@ -256,7 +264,7 @@ const Createorders = () => {
               value={paymentMode}
               onChange={(e) => setPaymentmode(e.target.value)}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              disabled={loading}
+              disabled={loading.loading}
             >
               <option value="All">Select a payment mode</option>
               <option value="Cash">Cash</option>
@@ -287,7 +295,7 @@ const Createorders = () => {
                 e.target.value = "";
               }}
               className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              disabled={loading}
+              disabled={loading.loading}
             >
               <option value="">Select a product</option>
               {allProducts.map((product) => (
@@ -327,7 +335,7 @@ const Createorders = () => {
                       );
                     }}
                     className="w-16 px-2 py-1 rounded text-center text-pink-900"
-                    disabled={loading}
+                    disabled={loading.loading}
                   />
                   <button
                     type="button"
@@ -337,7 +345,7 @@ const Createorders = () => {
                       )
                     }
                     className="text-pink-600 hover:text-pink-900 font-bold text-lg"
-                    disabled={loading}
+                    disabled={loading.loading}
                   >
                     &times;
                   </button>
@@ -351,9 +359,13 @@ const Createorders = () => {
             <button
               className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white disabled:opacity-50 disabled:cursor-not-allowed"
               type="submit"
-              disabled={loading}
+              disabled={loading.loading}
             >
-              {loading ? "Submitting..." : id ? "Update Order" : "Create Order"}
+              {loading.loading
+                ? "Submitting..."
+                : id
+                ? "Update Order"
+                : "Create Order"}
             </button>
           </div>
         </form>

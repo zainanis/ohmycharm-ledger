@@ -14,6 +14,7 @@ const Orders = () => {
   const [filter, setFilter] = useState("All");
   const [filterBy, setFilterby] = useState("status");
   const [orderBy, setOrderby] = useState("orderDate");
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -22,6 +23,7 @@ const Orders = () => {
 
   useEffect(() => {
     if (allOrders.length === 0) {
+      setLoading({ loading: true, what: "Orders" });
       axios
         .get("http://localhost:5001/api/orders")
         .then((res) => {
@@ -30,6 +32,9 @@ const Orders = () => {
         })
         .catch((err) => {
           console.log(err);
+        })
+        .finally(() => {
+          setLoading({ loading: false, what: null });
         });
     }
   }, []);
@@ -168,6 +173,7 @@ const Orders = () => {
         <Mytable
           who="orders"
           data={allOrders}
+          loading={loading}
           header={[
             { label: "Customer Name", path: ".customerId.name" },
             { label: "Status", path: ".status" },

@@ -88,22 +88,28 @@ const Products = () => {
   const [search, setSearch] = useState("");
   const allProducts = useSelector((state) => state.products.allProducts);
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   const handleDelete = (id) => {
     SetallProducts((prev) => prev.filter((product) => product._id !== id));
   };
 
   useEffect(() => {
-    axios
-      .get("http://localhost:5001/api/products")
-      .then((res) => {
-        console.log(res);
+    if (allProducts.length === 0) {
+      setLoading({ loading: true, what: "Products" });
 
-        dispatch(setProducts(res.data));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+      axios
+        .get("http://localhost:5001/api/products")
+        .then((res) => {
+          console.log(res);
+
+          dispatch(setProducts(res.data));
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => setLoading({ loading: false, what: null }));
+    }
   }, []);
 
   const handleStatusChange = (e) => {
@@ -149,6 +155,7 @@ const Products = () => {
 
       <Paginate
         who="Product"
+        loading={loading}
         allProducts={allProducts}
         selectedStatus={selectedStatus}
         currentPage={currentPage}

@@ -13,9 +13,11 @@ const Customers = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   useEffect(() => {
     if (allCustomers.length === 0) {
+      setLoading({ loading: true, what: "Customers" });
       axios
         .get("http://localhost:5001/api/customers")
         .then((res) => {
@@ -24,7 +26,8 @@ const Customers = () => {
         })
         .catch((err) => {
           console.log(err);
-        });
+        })
+        .finally(() => setLoading({ loading: false, what: null }));
     }
   }, []);
 
@@ -55,6 +58,7 @@ const Customers = () => {
 
       <Paginate
         who="Customer"
+        loading={loading}
         allProducts={allCustomers}
         currentPage={currentPage}
         search={search}

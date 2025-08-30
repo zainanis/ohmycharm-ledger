@@ -13,6 +13,7 @@ const Expenses = () => {
 
   const [filter, setFilter] = useState("All");
   const [filterBy, setFilterby] = useState("type");
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -21,6 +22,8 @@ const Expenses = () => {
 
   useEffect(() => {
     if (allExpenses.length === 0) {
+      setLoading({ loading: true, what: "Expenses" });
+
       axios
         .get("http://localhost:5001/api/expenses")
         .then((res) => {
@@ -29,6 +32,9 @@ const Expenses = () => {
         })
         .catch((err) => {
           console.log(err);
+        })
+        .finally(() => {
+          setLoading({ loading: false, what: null });
         });
     }
   }, []);
@@ -151,6 +157,7 @@ const Expenses = () => {
         <Mytable
           who="expenses"
           data={allExpenses}
+          loading={loading}
           header={[
             { label: "Name", path: ".name" },
             { label: "Type", path: ".type" },
