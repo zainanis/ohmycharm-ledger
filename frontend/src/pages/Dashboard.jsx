@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 
-import { Bar, Line } from "react-chartjs-2";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setOrders } from "../state/orderSlice.js";
 import { setExpenses } from "../state/expenseSlice.js";
 import Card from "../components/utils/Card.jsx";
-
+import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +13,7 @@ import {
   BarElement,
   LineElement,
   PointElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -25,6 +25,7 @@ ChartJS.register(
   BarElement,
   LineElement,
   PointElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
@@ -104,7 +105,7 @@ const Dashboard = () => {
 
     const aYearAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
     const monthExpense = {
-      [monthNames[now.getMonth() + 1]]: 0,
+      [monthNames[now.getMonth()]]: 0,
     };
 
     const monthsInRange = [];
@@ -133,20 +134,20 @@ const Dashboard = () => {
         expenseDate.getFullYear() === now.getFullYear() &&
         expenseDate.getMonth() === now.getMonth()
       ) {
-        monthExpense[monthNames[now.getMonth() + 1]] += expense.cost;
+        monthExpense[monthNames[now.getMonth()]] += expense.cost;
       }
     });
 
     return {
-      // monthName: monthNames[now.getMonth()],
+      monthName: monthNames[now.getMonth()],
       monthExpense: monthExpense,
       monthExpenses: monthExpenses,
       totalExpense: totalExpense,
     };
   };
 
-  const { monthExpense, monthExpenses, totalExpense } = groupByMonthExpenses();
-  console.log(monthExpenses);
+  const { monthName, monthExpense, monthExpenses, totalExpense } =
+    groupByMonthExpenses();
 
   const groupByMonthOrders = () => {
     const monthNames = [
@@ -165,6 +166,7 @@ const Dashboard = () => {
     ];
     const monthCounts = {};
     const monthRevenue = {};
+    const orderStatus = {};
     let totalRevenue = 0;
 
     const actual = new Date();
@@ -186,6 +188,7 @@ const Dashboard = () => {
       const orderDate = new Date(order.orderDate);
 
       if (orderDate >= aYearAgo && orderDate <= now) {
+        console.log(order);
         const key = `${
           monthNames[orderDate.getMonth()]
         } ${orderDate.getFullYear()}`;
@@ -196,17 +199,25 @@ const Dashboard = () => {
           totalRevenue += order.totalAmount;
         }
       }
+
+      if (!orderStatus[order.status]) {
+        orderStatus[order.status] = 1;
+      } else if (orderStatus[order.status]) {
+        orderStatus[order.status] += 1;
+      }
     });
 
     return {
+      orderStatus: orderStatus,
       monthCounts: monthCounts,
       monthRevenue: monthRevenue,
       totalRevenue: totalRevenue,
     };
   };
 
-  const { monthCounts, monthRevenue, totalRevenue } = groupByMonthOrders();
-
+  const { orderStatus, monthCounts, monthRevenue, totalRevenue } =
+    groupByMonthOrders();
+  console.log("status" + JSON.stringify(orderStatus));
   const ordersThisMonth = () => {
     let runningCount = 0;
     let runningTotal = 0;
@@ -310,6 +321,31 @@ const Dashboard = () => {
     ],
   };
 
+  const orderStatusData = {
+    labels: Object.keys(orderStatus),
+    datasets: [
+      {
+        label: "Order Status",
+        data: Object.values(orderStatus),
+        backgroundColor: [
+          "#FF6384", // red
+          "#36A2EB", // blue
+          "#FFCE56", // yellow
+          "#4BC0C0", // teal
+          "#9966FF", // purple
+          "#FF9F40", // orange
+        ],
+        hoverOffset: 6,
+      },
+    ],
+  };
+  const doughnutOptions = {
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+  };
   const chartOptions = {
     plugins: {
       legend: {
@@ -365,40 +401,55 @@ const Dashboard = () => {
         <Card title="Revenue this month" data={ordersMonth.runningTotal} />
         <Card title="Overall revenue" data={totalRevenue} />
         <Card title="Overall expense" data={totalExpense} />
-        <Card title="Overall expense" data={monthExpense[0] || 0} />
+        <Card title="Expense this month" data={monthExpense[monthName]} />
+        <div className="w-30">
+          <Doughnut data={orderStatusData} options={doughnutOptions} />
+        </div>
       </div>
-
+      {/* <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
+        <h1 className="mb-2 font-bold text-2xl">Order Status</h1>
+        <Doughnut data={orderStatusData} options={doughnutOptions} />
+      </div> */}
       <div className="">
-        <div className="flex gap-6 justify-between border-2 border-gray-800 rounded-2xl p-6 min-w-full">
-          <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
-            <h1 className="mb-2 font-bold text-2xl">Orders </h1>
-            <div className="w-xl">
-              <div className="">
-                <p className="mb-2 text-lg font-semibold">
-                  {ordersMonth.month}
-                </p>
-                <Bar data={monthData} options={orderChartOptions} />
+        <div className="flex flex-col gap-6 justify-between border-2 border-gray-800 rounded-2xl p-6 min-w-full">
+          <div className="flex justify-between">
+            <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
+              <h1 className="mb-2 font-bold text-2xl">Orders </h1>
+              <div className="w-xl">
+                <div className="">
+                  <p className="mb-2 text-lg font-semibold">
+                    {ordersMonth.month}
+                  </p>
+                  <Bar data={monthData} options={orderChartOptions} />
+                </div>
+                <div className="">
+                  <p className="mb-2 text-lg font-semibold">Sales per Month</p>
+                  <Bar data={chartData} options={orderChartOptions} />
+                </div>
               </div>
-              <div className="">
-                <p className="mb-2 text-lg font-semibold">Sales per Month</p>
-                <Bar data={chartData} options={orderChartOptions} />
+            </div>
+
+            <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
+              <h1 className="mb-2 font-bold text-2xl">Profit and Expenses </h1>
+
+              <div className="w-xl">
+                <p className="mb-2 text-lg font-semibold">Revenue per Month</p>
+                <Line data={revenueChartData} options={chartOptions} />
+              </div>
+
+              <div className="w-xl">
+                <p className="mb-2 text-lg font-semibold">Expense per Month</p>
+                <Line data={expenseChartData} options={chartOptions} />
               </div>
             </div>
           </div>
 
-          <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
-            <h1 className="mb-2 font-bold text-2xl">Profit and Expenses </h1>
-
-            <div className="w-xl">
-              <p className="mb-2 text-lg font-semibold">Revenue per Month</p>
-              <Line data={revenueChartData} options={chartOptions} />
+          {/* <div className="flex justify-center">
+            <div className="flex gap-6 border-2 flex-col w-3xs border-gray-800 rounded-2xl p-6">
+              <h1 className="mb-2 font-bold text-2xl">Order Status</h1>
+              <Doughnut data={orderStatusData} options={doughnutOptions} />
             </div>
-
-            <div className="w-xl">
-              <p className="mb-2 text-lg font-semibold">Expense per Month</p>
-              <Line data={expenseChartData} options={chartOptions} />
-            </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
