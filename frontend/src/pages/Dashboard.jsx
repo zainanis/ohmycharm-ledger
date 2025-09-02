@@ -4,6 +4,8 @@ import { Bar, Line } from "react-chartjs-2";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setOrders } from "../state/orderSlice.js";
+import { setExpenses } from "../state/expenseSlice.js";
+import Card from "../components/utils/Card.jsx";
 
 import {
   Chart as ChartJS,
@@ -32,6 +34,7 @@ const Dashboard = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState({ loading: false, what: null });
   const allOrders = useSelector((state) => state.orders.allOrders);
+  const allExpenses = useSelector((state) => state.expenses.allExpenses);
 
   useEffect(() => {
     if (allOrders.length === 0) {
@@ -40,6 +43,20 @@ const Dashboard = () => {
         .get("http://localhost:5001/api/orders")
         .then((res) => {
           dispatch(setOrders(res.data));
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => {
+          setLoading({ loading: false, what: null });
+        });
+    }
+    if (allExpenses.length === 0) {
+      setLoading({ loading: true, what: "Expenses" });
+      axios
+        .get("http://localhost:5001/api/expenses")
+        .then((res) => {
+          dispatch(setExpenses(res.data));
         })
         .catch((err) => {
           console.log(err);
@@ -64,7 +81,74 @@ const Dashboard = () => {
     "#E0FFFF", // Light cyan
   ];
 
-  const groupByMonth = () => {
+  const groupByMonthExpenses = () => {
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+    const monthExpenses = {};
+    let totalExpense = 0;
+
+    const actual = new Date();
+    const now = new Date(actual.getFullYear(), actual.getMonth(), 1);
+
+    const aYearAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const monthExpense = {
+      [monthNames[now.getMonth() + 1]]: 0,
+    };
+
+    const monthsInRange = [];
+
+    for (let i = 11; i >= 1; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      monthsInRange.push(key);
+      monthExpenses[key] = 0;
+    }
+
+    allExpenses.forEach((expense) => {
+      const expenseDate = new Date(expense.date);
+
+      if (expenseDate >= aYearAgo && expenseDate <= now) {
+        const key = `${
+          monthNames[expenseDate.getMonth()]
+        } ${expenseDate.getFullYear()}`;
+
+        if (monthExpenses.hasOwnProperty(key)) {
+          monthExpenses[key] += expense.cost;
+          totalExpense += expense.cost;
+        }
+      }
+      if (
+        expenseDate.getFullYear() === now.getFullYear() &&
+        expenseDate.getMonth() === now.getMonth()
+      ) {
+        monthExpense[monthNames[now.getMonth() + 1]] += expense.cost;
+      }
+    });
+
+    return {
+      // monthName: monthNames[now.getMonth()],
+      monthExpense: monthExpense,
+      monthExpenses: monthExpenses,
+      totalExpense: totalExpense,
+    };
+  };
+
+  const { monthExpense, monthExpenses, totalExpense } = groupByMonthExpenses();
+  console.log(monthExpenses);
+
+  const groupByMonthOrders = () => {
     const monthNames = [
       "January",
       "February",
@@ -81,6 +165,7 @@ const Dashboard = () => {
     ];
     const monthCounts = {};
     const monthRevenue = {};
+    let totalRevenue = 0;
 
     const actual = new Date();
     const now = new Date(actual.getFullYear(), actual.getMonth(), 1);
@@ -108,14 +193,19 @@ const Dashboard = () => {
         if (monthCounts.hasOwnProperty(key)) {
           monthCounts[key]++;
           monthRevenue[key] += order.totalAmount;
+          totalRevenue += order.totalAmount;
         }
       }
     });
 
-    return { monthCounts: monthCounts, monthRevenue: monthRevenue };
+    return {
+      monthCounts: monthCounts,
+      monthRevenue: monthRevenue,
+      totalRevenue: totalRevenue,
+    };
   };
 
-  const { monthCounts, monthRevenue } = groupByMonth();
+  const { monthCounts, monthRevenue, totalRevenue } = groupByMonthOrders();
 
   const ordersThisMonth = () => {
     let runningCount = 0;
@@ -140,7 +230,7 @@ const Dashboard = () => {
     const monthStart = new Date(actual.getFullYear(), actual.getMonth(), 1);
     const monthEnd = new Date(actual.getFullYear(), actual.getMonth() + 1, 0);
     for (let day = 1; day <= monthEnd.getDate(); day++) {
-      monthCounts[day] = 0;
+      monthCounts["day " + day] = 0;
     }
 
     let key = null;
@@ -150,11 +240,11 @@ const Dashboard = () => {
       if (orderDate >= monthStart && orderDate <= monthEnd) {
         runningTotal += order.totalAmount;
         const day = orderDate.getDate();
-        if (!monthCounts[day]) {
-          monthCounts[day] = 1;
+        if (!monthCounts["day " + day]) {
+          monthCounts["day " + day] = 1;
           runningCount++;
         } else {
-          monthCounts[day]++;
+          monthCounts["day " + day]++;
           runningCount++;
         }
       }
@@ -185,7 +275,7 @@ const Dashboard = () => {
     labels: Object.keys(ordersMonth.days),
     datasets: [
       {
-        label: "Orders Per Month",
+        label: "Orders Per Day",
         data: Object.values(ordersMonth.days),
         backgroundColor: barColors,
         borderColor: barColors,
@@ -206,34 +296,109 @@ const Dashboard = () => {
       },
     ],
   };
+  const expenseChartData = {
+    labels: Object.keys(monthExpenses),
+    datasets: [
+      {
+        label: "Expenses Per Month",
+        data: Object.values(monthExpenses),
+        fill: true,
+        borderColor: "#4bc0c0",
+        backgroundColor: "#4bc0c0",
+        tension: 0.3,
+      },
+    ],
+  };
+
   const chartOptions = {
     plugins: {
       legend: {
         display: false,
       },
     },
+    scales: {
+      x: {
+        ticks: {
+          display: false, // This removes the labels from x-axis
+        },
+        grid: {
+          display: false, // Optional: remove grid lines if desired
+        },
+      },
+    },
   };
 
+  const orderChartOptions = {
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          display: false, // This removes the labels from x-axis
+        },
+        grid: {
+          display: false, // Optional: remove grid lines if desired
+        },
+      },
+      y: {
+        ticks: {
+          stepSize: 1, // Ensures increments of 1
+          callback: function (value) {
+            if (Number.isInteger(value)) {
+              return value;
+            }
+            return null; // Hides decimal values just in case
+          },
+        },
+      },
+    },
+  };
+  console.log(monthExpense);
   return (
-    <div className="bg-white rounded-lg pb-4 shadow h-[100vh] p-6">
-      <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-      <div>Orders this month :{ordersMonth.runningCount}</div>
-      <div>Revenue this month :{ordersMonth.runningTotal}</div>
-      <div className="w-full max-w-5xl mx-auto px-4">
-        <div className="flex justify-between gap-6">
-          <div className="flex-1 min-w-lg">
-            <p className="mb-2 text-lg font-semibold">orders this month</p>
-            <Bar data={monthData} options={chartOptions} />
-          </div>
-          <div className="flex-1 min-w-lg">
-            <p className="mb-2 text-lg font-semibold">orders per month</p>
-            <Bar data={chartData} options={chartOptions} />
-          </div>
-        </div>
+    <div className="bg-white rounded-lg pb-4 shadow  p-6 flex flex-col gap-4">
+      <h2 className="text-xl  font-semibold mb-4">Dashboard</h2>
+      <div className="flex gap-4">
+        <Card title="Orders this month" data={ordersMonth.runningCount} />
+        <Card title="Revenue this month" data={ordersMonth.runningTotal} />
+        <Card title="Overall revenue" data={totalRevenue} />
+        <Card title="Overall expense" data={totalExpense} />
+        <Card title="Overall expense" data={monthExpense[0] || 0} />
+      </div>
 
-        <div className="mt-10 w-full">
-          <p className="mb-2 text-lg font-semibold">revenue per month</p>
-          <Line data={revenueChartData} options={chartOptions} />
+      <div className="">
+        <div className="flex gap-6 justify-between border-2 border-gray-800 rounded-2xl p-6 min-w-full">
+          <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
+            <h1 className="mb-2 font-bold text-2xl">Orders </h1>
+            <div className="w-xl">
+              <div className="">
+                <p className="mb-2 text-lg font-semibold">
+                  {ordersMonth.month}
+                </p>
+                <Bar data={monthData} options={orderChartOptions} />
+              </div>
+              <div className="">
+                <p className="mb-2 text-lg font-semibold">Sales per Month</p>
+                <Bar data={chartData} options={orderChartOptions} />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
+            <h1 className="mb-2 font-bold text-2xl">Profit and Expenses </h1>
+
+            <div className="w-xl">
+              <p className="mb-2 text-lg font-semibold">Revenue per Month</p>
+              <Line data={revenueChartData} options={chartOptions} />
+            </div>
+
+            <div className="w-xl">
+              <p className="mb-2 text-lg font-semibold">Expense per Month</p>
+              <Line data={expenseChartData} options={chartOptions} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
