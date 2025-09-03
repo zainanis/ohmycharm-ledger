@@ -395,62 +395,61 @@ const Dashboard = () => {
   console.log(monthExpense);
   return (
     <div className="bg-white rounded-lg pb-4 shadow  p-6 flex flex-col gap-4">
-      <h2 className="text-xl  font-semibold mb-4">Dashboard</h2>
-      <div className="flex gap-4">
+      <h2 className="font-bold text-4xl text-pink-900">Dashboard</h2>
+      <div className="flex gap-4 justify-between">
         <Card title="Orders this month" data={ordersMonth.runningCount} />
         <Card title="Revenue this month" data={ordersMonth.runningTotal} />
+        <div className="w-30 flex flex-col items-center gap-0">
+          <Doughnut data={orderStatusData} options={doughnutOptions} />
+          <h1 className="font-semibold">Order Status</h1>
+        </div>
         <Card title="Overall revenue" data={totalRevenue} />
         <Card title="Overall expense" data={totalExpense} />
-        <Card title="Expense this month" data={monthExpense[monthName]} />
-        <div className="w-30">
-          <Doughnut data={orderStatusData} options={doughnutOptions} />
-        </div>
+        {/* <Card title="Expense this month" data={monthExpense[monthName]} /> */}
       </div>
       {/* <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
         <h1 className="mb-2 font-bold text-2xl">Order Status</h1>
         <Doughnut data={orderStatusData} options={doughnutOptions} />
       </div> */}
       <div className="">
-        <div className="flex flex-col gap-6 justify-between border-2 border-gray-800 rounded-2xl p-6 min-w-full">
-          <div className="flex justify-between">
-            <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
-              <h1 className="mb-2 font-bold text-2xl">Orders </h1>
-              <div className="w-xl">
-                <div className="">
-                  <p className="mb-2 text-lg font-semibold">
-                    {ordersMonth.month}
-                  </p>
-                  <Bar data={monthData} options={orderChartOptions} />
-                </div>
-                <div className="">
-                  <p className="mb-2 text-lg font-semibold">Sales per Month</p>
-                  <Bar data={chartData} options={orderChartOptions} />
-                </div>
+        <div className="flex  gap-6 justify-between  border-1 border-stone-200 rounded-xl min-w-full">
+          <div className="flex gap-6 flex-col rounded-2xl p-6">
+            <h1 className="mb-2 font-bold text-2xl">Orders </h1>
+            <div className="w-xl">
+              <div className="">
+                <p className="mb-2 text-lg font-semibold">
+                  {ordersMonth.month}
+                </p>
+                <Bar data={monthData} options={orderChartOptions} />
               </div>
-            </div>
-
-            <div className="flex gap-6 border-2 flex-col border-gray-800 rounded-2xl p-6">
-              <h1 className="mb-2 font-bold text-2xl">Profit and Expenses </h1>
-
-              <div className="w-xl">
-                <p className="mb-2 text-lg font-semibold">Revenue per Month</p>
-                <Line data={revenueChartData} options={chartOptions} />
-              </div>
-
-              <div className="w-xl">
-                <p className="mb-2 text-lg font-semibold">Expense per Month</p>
-                <Line data={expenseChartData} options={chartOptions} />
+              <div className="">
+                <p className="mb-2 text-lg font-semibold">Sales per Month</p>
+                <Bar data={chartData} options={orderChartOptions} />
               </div>
             </div>
           </div>
 
-          {/* <div className="flex justify-center">
+          <div className="flex gap-6 flex-col  rounded-2xl p-6">
+            <h1 className="mb-2 font-bold text-2xl">Profit and Expenses </h1>
+
+            <div className="w-xl">
+              <p className="mb-2 text-lg font-semibold">Revenue per Month</p>
+              <Line data={revenueChartData} options={chartOptions} />
+            </div>
+
+            <div className="w-xl">
+              <p className="mb-2 text-lg font-semibold">Expense per Month</p>
+              <Line data={expenseChartData} options={chartOptions} />
+            </div>
+          </div>
+        </div>
+
+        {/* <div className="flex justify-center">
             <div className="flex gap-6 border-2 flex-col w-3xs border-gray-800 rounded-2xl p-6">
               <h1 className="mb-2 font-bold text-2xl">Order Status</h1>
               <Doughnut data={orderStatusData} options={doughnutOptions} />
             </div>
           </div> */}
-        </div>
       </div>
     </div>
   );
