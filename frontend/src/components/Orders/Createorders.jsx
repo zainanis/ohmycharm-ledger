@@ -150,15 +150,9 @@ const Createorders = () => {
       {/* Overlay for loading */}
       {loading.loading && (
         <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          {loading.what == "data" ? (
-            <div className="text-pink-800 font-bold text-xl animate-pulse">
-              Loading...
-            </div>
-          ) : (
-            <div className="text-pink-800 font-bold text-xl animate-pulse">
-              Submitting...
-            </div>
-          )}
+          <div className="text-pink-800 font-bold text-xl animate-pulse">
+            {loading.what}
+          </div>
         </div>
       )}
 

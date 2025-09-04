@@ -117,7 +117,7 @@ const Mytable = ({
                 colSpan={header.length + 1}
                 className="px-6 py-4 text-center text-gray-500"
               >
-                Loading {loading.what}...
+                {loading.what}
               </td>
             </tr>
           ) : dataToRender.length > 0 ? (

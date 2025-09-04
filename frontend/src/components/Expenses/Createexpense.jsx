@@ -12,8 +12,7 @@ import {
 
 const Createexpense = () => {
   const { id } = useParams();
-  const [expense, setExpense] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -29,7 +28,7 @@ const Createexpense = () => {
   useEffect(() => {
     if (id) {
       if (allExpenses.length == 0) {
-        setLoading(true);
+        setLoading({ loading: true, what: "Loading Expense..." });
         axios
           .get("http://localhost:5001/api/expenses")
           .then((res) => {
@@ -39,9 +38,7 @@ const Createexpense = () => {
           .catch((err) => {
             console.log(err);
           })
-          .finally(() => {
-            setLoading(false);
-          });
+          .finally(() => setLoading({ loading: false, what: null }));
       }
       const expense = allExpenses.find((expense) => expense._id === id);
       if (expense) {
@@ -70,7 +67,7 @@ const Createexpense = () => {
     const request = id
       ? axios.put(`http://localhost:5001/api/expenses/${id}`, expense)
       : axios.post("http://localhost:5001/api/expenses", expense);
-    setLoading(true);
+    setLoading({ loading: true, what: "Submitting Expense..." });
     request
       .then((res) => {
         if (id) {
@@ -87,23 +84,17 @@ const Createexpense = () => {
         console.log(error.response);
       })
       .finally(() => {
-        setLoading(false);
+        setLoading({ loading: false, what: null });
       });
   };
 
   return (
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
-      {loading && (
+      {loading.loading && (
         <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          {id ? (
-            <div className="text-pink-800 font-bold text-xl animate-pulse">
-              Loading...
-            </div>
-          ) : (
-            <div className="text-pink-800 font-bold text-xl animate-pulse">
-              Submitting...
-            </div>
-          )}
+          <div className="text-pink-800 font-bold text-xl animate-pulse">
+            {loading.what}
+          </div>
         </div>
       )}
       <div className="flex flex-col gap-5">

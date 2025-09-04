@@ -18,11 +18,9 @@ const Expenses = () => {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  const [search, setSearch] = useState("");
-
   useEffect(() => {
     if (allExpenses.length === 0) {
-      setLoading({ loading: true, what: "Expenses" });
+      setLoading({ loading: true, what: "Loading Expenses..." });
 
       axios
         .get("http://localhost:5001/api/expenses")
@@ -44,13 +42,6 @@ const Expenses = () => {
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
           <h1 className="font-bold text-4xl text-pink-900">Expenses</h1>
-          <input
-            type="text"
-            className="border-1 border-solid border-stone-200 rounded-lg pr-20 py-2 pl-5"
-            placeholder="Search Expenses"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
         </div>
 
         <div className="flex justify-between px-5 gap-5 h-15 ">
