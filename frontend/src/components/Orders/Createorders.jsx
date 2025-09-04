@@ -27,7 +27,7 @@ const Createorders = () => {
 
   useEffect(() => {
     if (allCustomers.length === 0) {
-      setLoading({ loading: true, what: "data" });
+      setLoading({ loading: true, what: "Loading Customers..." });
       axios
         .get("http://localhost:5001/api/customers")
         .then((res) => dispatch(setCustomers(res.data)))
@@ -36,7 +36,7 @@ const Createorders = () => {
     }
 
     if (allProducts.length === 0) {
-      setLoading({ loading: true, what: "data" });
+      setLoading({ loading: true, what: "Loading Products..." });
 
       axios
         .get("http://localhost:5001/api/products")
@@ -46,7 +46,7 @@ const Createorders = () => {
     }
 
     if (id && allProducts.length !== 0) {
-      setLoading({ loading: true, what: "data" });
+      setLoading({ loading: true, what: "Loading Orders..." });
 
       axios
         .get(`http://localhost:5001/api/orders/${id}`)
@@ -76,7 +76,7 @@ const Createorders = () => {
         .catch((err) => console.log(err))
         .finally(() => setLoading({ loading: false, what: null }));
     }
-  }, [allProducts, id]);
+  }, [allProducts, allCustomers, id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
