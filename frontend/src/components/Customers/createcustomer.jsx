@@ -4,7 +4,11 @@ import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addCustomer, updateCustomer } from "../../state/customerSlice";
+import {
+  addCustomer,
+  updateCustomer,
+  setCustomers,
+} from "../../state/customerSlice";
 
 export const Createcustomer = () => {
   const { id } = useParams();
@@ -20,21 +24,20 @@ export const Createcustomer = () => {
   const allcustomers = useSelector((state) => state.customers.allCustomers);
 
   useEffect(() => {
-    if (allcustomers.length === 0) {
-      setLoading({ loading: true, what: "Customers" });
-      axios
-        .get("http://localhost:5001/api/customers")
-        .then((res) => {
-          console.log(res);
-          dispatch(setCustomers(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => setLoading({ loading: false, what: null }));
-    }
     if (id) {
-      setLoading({ loading: true, what: "Customer" });
+      if (allcustomers.length === 0) {
+        setLoading({ loading: true, what: "Loading Customer..." });
+        axios
+          .get("http://localhost:5001/api/customers")
+          .then((res) => {
+            console.log(res);
+            dispatch(setCustomers(res.data));
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => setLoading({ loading: false, what: null }));
+      }
       const customer = allcustomers.find((customer) => customer._id === id);
 
       if (customer) {
@@ -43,70 +46,54 @@ export const Createcustomer = () => {
         setPhonenumber(customer.phoneNumber);
         setEmail(customer.email);
       }
-      setLoading({ loading: false, what: "Customer" });
     }
-  }, []);
+  }, [id, allcustomers]);
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (id == undefined) {
-      setLoading({ loading: true, what: "Submitting Customer" });
-
-      const newCustomer = {
-        name,
-        phoneNumber: parseFloat(phonenumber),
-        address,
-        email,
-      };
-      const request = axios.post(
-        "http://localhost:5001/api/customers",
-        newCustomer
-      );
-      request
-        .then((res) => {
-          console.log("Customer Created Successfully.");
-          dispatch(addCustomer(res.data));
-          navigate("/customers", { replace: true });
-        })
-        .catch((error) => {
-          console.log(error.response);
-        })
-        .finally(() => {
-          setLoading({ loading: false, what: null });
-        });
-    } else {
-      setLoading({ loading: true, what: "Submitting Customer" });
-
-      const updatedCustomer = {
-        name,
-        phoneNumber: parseFloat(phonenumber),
-        address,
-        email,
-      };
-      const request = axios.put(
-        `http://localhost:5001/api/customers/${id}`,
-        updatedCustomer
-      );
-      request
-        .then((res) => {
-          console.log("Customer Created Successfully.");
+    const customer = {
+      name,
+      phoneNumber: parseFloat(phonenumber),
+      address,
+      email,
+    };
+    const request = id
+      ? axios.put(`http://localhost:5001/api/customers/${id}`, customer)
+      : axios.post("http://localhost:5001/api/customers", customer);
+    setLoading({ loading: true, what: "Submitting Customer..." });
+    request
+      .then((res) => {
+        if (id) {
+          console.log("Customer Updated Successfully.");
           dispatch(updateCustomer(res.data));
-          navigate("/customers", { replace: true });
-        })
-        .catch((error) => {
-          console.log(error.response);
-        })
-        .finally(() => {
-          setLoading({ loading: false, what: null });
-        });
-    }
+        } else {
+          console.log("Product Created Successfully.");
+          dispatch(addCustomer(res.data));
+        }
+        navigate("/customers", { replace: true });
+      })
+      .catch((error) => {
+        console.log(error.response);
+      })
+      .finally(() => {
+        setLoading({ loading: false, what: null });
+      });
   };
 
   return (
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
+      {loading.loading && (
+        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+          <div className="text-pink-800 font-bold text-xl animate-pulse">
+            {loading.what}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Add Customer</h1>
+          <h1 className="font-bold text-4xl text-pink-900">
+            {id ? "Update" : "Add"} Customer
+          </h1>
         </div>
         <div className="pl-5">
           <NavLink to="/customers">
@@ -165,7 +152,7 @@ export const Createcustomer = () => {
               className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
               type="submit"
             >
-              Create Customer
+              {id ? "Update" : "Create"} Customer
             </button>
           </div>
         </form>
