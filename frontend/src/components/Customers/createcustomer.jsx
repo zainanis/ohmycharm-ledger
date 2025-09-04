@@ -20,7 +20,21 @@ export const Createcustomer = () => {
   const allcustomers = useSelector((state) => state.customers.allCustomers);
 
   useEffect(() => {
+    if (allcustomers.length === 0) {
+      setLoading({ loading: true, what: "Customers" });
+      axios
+        .get("http://localhost:5001/api/customers")
+        .then((res) => {
+          console.log(res);
+          dispatch(setCustomers(res.data));
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+        .finally(() => setLoading({ loading: false, what: null }));
+    }
     if (id) {
+      setLoading({ loading: true, what: "Customer" });
       const customer = allcustomers.find((customer) => customer._id === id);
 
       if (customer) {
@@ -29,12 +43,15 @@ export const Createcustomer = () => {
         setPhonenumber(customer.phoneNumber);
         setEmail(customer.email);
       }
+      setLoading({ loading: false, what: "Customer" });
     }
   }, []);
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (id == undefined) {
+      setLoading({ loading: true, what: "Submitting Customer" });
+
       const newCustomer = {
         name,
         phoneNumber: parseFloat(phonenumber),
@@ -53,8 +70,13 @@ export const Createcustomer = () => {
         })
         .catch((error) => {
           console.log(error.response);
+        })
+        .finally(() => {
+          setLoading({ loading: false, what: null });
         });
     } else {
+      setLoading({ loading: true, what: "Submitting Customer" });
+
       const updatedCustomer = {
         name,
         phoneNumber: parseFloat(phonenumber),
@@ -73,6 +95,9 @@ export const Createcustomer = () => {
         })
         .catch((error) => {
           console.log(error.response);
+        })
+        .finally(() => {
+          setLoading({ loading: false, what: null });
         });
     }
   };

@@ -13,11 +13,23 @@ const Paginate = ({
 }) => {
   const itemsPerPage = 10;
 
+  const searchedProducts = useMemo(() => {
+    if (search == "" || search == undefined) {
+      return allProducts;
+    }
+
+    return allProducts.filter((product) =>
+      product.name?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [search, allProducts]);
+
   const filteredProducts = useMemo(() => {
     if (selectedStatus === "All" || selectedStatus == undefined)
-      return allProducts;
-    return allProducts.filter((product) => product.status === selectedStatus);
-  }, [selectedStatus, allProducts]);
+      return searchedProducts;
+    return searchedProducts.filter(
+      (product) => product.status === selectedStatus
+    );
+  }, [selectedStatus, searchedProducts]);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;

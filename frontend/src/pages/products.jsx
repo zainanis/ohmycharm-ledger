@@ -90,10 +90,6 @@ const Products = () => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState({ loading: false, what: null });
 
-  const handleDelete = (id) => {
-    SetallProducts((prev) => prev.filter((product) => product._id !== id));
-  };
-
   useEffect(() => {
     if (allProducts.length === 0) {
       setLoading({ loading: true, what: "Products" });
@@ -148,7 +144,7 @@ const Products = () => {
             <option value="All">All</option>
             <option value="Available">Available</option>
             <option value="Discontinued">Discontinued</option>
-            <option value="Currently Unavailable">Currently Unavailable</option>
+            <option value="Out of Stock">Currently Unavailable</option>
           </select>
         </div>
       </div>

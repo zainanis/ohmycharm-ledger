@@ -3,43 +3,52 @@ import axios from "axios";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
-import { useDispatch } from "react-redux";
-import { addProduct, updateProduct } from "../../state/productsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addProduct,
+  updateProduct,
+  setProducts,
+} from "../../state/productsSlice";
 
 export const Createproduct = () => {
   const { id } = useParams();
-  const [product, Setproduct] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({ loading: false, what: null });
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
 
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const allProducts = useSelector((state) => state.products.allProducts);
 
   useEffect(() => {
-    if (id != undefined) {
-      setLoading(true);
-      axios
-        .get(`http://localhost:5001/api/products/${id}`)
-        .then((res) => {
-          setName(res.data.name || "");
-          setPrice(res.data.price || 0);
-          setDescription(res.data.description || "");
-          setStatus(res.data.status || "Available");
-          Setproduct(res.data);
-        })
-        .catch((err) => {
-          console.log(err.message);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [id]);
+    if (id) {
+      if (allProducts.length === 0) {
+        setLoading({ loading: true, what: "Loading Product..." });
 
-  const navigate = useNavigate();
+        axios
+          .get("http://localhost:5001/api/products")
+          .then((res) => {
+            dispatch(setProducts(res.data));
+            console.log(res.data);
+          })
+          .catch((err) => {
+            console.log(err);
+          })
+          .finally(() => setLoading({ loading: false, what: null }));
+      }
+      const product = allProducts.find((product) => product._id === id);
+
+      if (product) {
+        setName(product.name || "");
+        setPrice(product.price || 0);
+        setDescription(product.description || "");
+        setStatus(product.status || "Available");
+      }
+    }
+  }, [id, allProducts]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -49,7 +58,7 @@ export const Createproduct = () => {
     const request = id
       ? axios.put(`http://localhost:5001/api/products/${id}`, newPost)
       : axios.post("http://localhost:5001/api/products", newPost);
-    setLoading(true);
+    setLoading({ loading: true, what: "Submitting Products..." });
     request
       .then((res) => {
         if (id) {
@@ -65,23 +74,17 @@ export const Createproduct = () => {
         console.log(error.response);
       })
       .finally(() => {
-        setLoading(false);
+        setLoading({ loading: false, what: null });
       });
   };
 
   return (
     <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
-      {loading && (
+      {loading.loading && (
         <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          {id ? (
-            <div className="text-pink-800 font-bold text-xl animate-pulse">
-              Loading...
-            </div>
-          ) : (
-            <div className="text-pink-800 font-bold text-xl animate-pulse">
-              Submitting...
-            </div>
-          )}
+          <div className="text-pink-800 font-bold text-xl animate-pulse">
+            {loading.what}
+          </div>
         </div>
       )}
 
