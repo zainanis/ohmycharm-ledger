@@ -8,8 +8,7 @@ import { addCustomer, updateCustomer } from "../../state/customerSlice";
 
 export const Createcustomer = () => {
   const { id } = useParams();
-  const [customer, setCustomer] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState({ loading: false, what: null });
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phonenumber, setPhonenumber] = useState();
