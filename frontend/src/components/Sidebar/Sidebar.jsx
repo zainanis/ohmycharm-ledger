@@ -1,5 +1,5 @@
 import React from "react";
-import Logo from "./logo";
+import Logo from "./Logo";
 import RouteSelect from "./RouteSelect";
 import { IoMenu } from "react-icons/io5";
 

@@ -8,7 +8,7 @@ import Orders from "./pages/Orders";
 import Ledger from "./pages/Ledger";
 import { Createproduct } from "./components/Products/createproduct";
 import { Createcustomer } from "./components/Customers/createcustomer";
-import Createexpense from "./components/Expenses/CreateExpense";
+import Createexpense from "./components/Expenses/Createexpense";
 import Details from "./components/Orders/Details";
 import Createorders from "./components/Orders/Createorders";
 

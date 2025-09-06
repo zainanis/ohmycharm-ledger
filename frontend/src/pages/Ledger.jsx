@@ -15,7 +15,7 @@ const Ledger = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    setLoading({ loading: true, what: "Ledger" });
+    setLoading({ loading: true, what: "Loading Ledger..." });
 
     axios
       .get("http://localhost:5001/api/ledger")

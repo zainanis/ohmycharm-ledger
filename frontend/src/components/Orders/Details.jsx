@@ -98,36 +98,45 @@ const Details = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-gray-700">
         {unHide && (
           <p>
-            <strong>Order ID: </strong> {order._id}
+            <strong>Order ID: </strong> {order._id ? order._id : "-"}
           </p>
         )}
 
         <p>
-          <strong>Customer Name: </strong> {customer.name}
+          <strong>Customer Name: </strong> {customer.name ? customer.name : "-"}
         </p>
         <p>
-          <strong>Status: </strong> {order.status}
+          <strong>Status: </strong> {order.status ? order.status : "-"}
         </p>
         <p>
           <strong>Total Amount: </strong>
-          {order.totalAmount ? order.totalAmount.toFixed(2) + " PKR" : "N/A"}
+          {order.totalAmount != null
+            ? order.totalAmount.toFixed(2) + " PKR"
+            : "-"}
         </p>
         <p>
-          <strong>Payment Mode:</strong> {order.paymentMode}
+          <strong>Payment Mode:</strong>{" "}
+          {order.paymentMode ? order.paymentMode : "-"}
         </p>
         <p>
-          <strong>Order Date:</strong>
-          {new Date(order.orderDate).toLocaleDateString("en-GB")}
+          <strong>Order Date:</strong>{" "}
+          {order.orderDate
+            ? new Date(order.orderDate).toLocaleDateString("en-GB")
+            : "-"}
         </p>
         {unHide && (
           <>
             <p>
-              <strong>Sent Date:</strong>
-              {new Date(order.sentDate).toLocaleDateString("en-GB")}
+              <strong>Sent Date:</strong>{" "}
+              {order.sentDate
+                ? new Date(order.sentDate).toLocaleDateString("en-GB")
+                : "-"}
             </p>
             <p>
-              <strong>Receive Date:</strong>
-              {new Date(order.recieveDate).toLocaleDateString("en-GB")}
+              <strong>Receive Date:</strong>{" "}
+              {order.recieveDate
+                ? new Date(order.recieveDate).toLocaleDateString("en-GB")
+                : "-"}
             </p>
           </>
         )}
@@ -149,19 +158,23 @@ const Details = () => {
               </tr>
             </thead>
             <tbody>
-              {products?.map((product, index) => (
+              {products?.map((product) => (
                 <tr key={product._id} className="border-t">
-                  <td className="p-3">{product.productId?.name}</td>
+                  <td className="p-3">
+                    {product.productId?.name ? product.productId.name : "-"}
+                  </td>
                   <td className="p-3">
                     {typeof product.productId?.price === "number"
                       ? product.productId.price.toFixed(2) + " PKR"
-                      : "N/A"}
+                      : "-"}
                   </td>
-                  <td className="p-3">{product.quantity}</td>
+                  <td className="p-3">
+                    {product.quantity ? product.quantity : "-"}
+                  </td>
                   <td className="p-3">
                     {typeof product.totalPrice === "number"
                       ? product.totalPrice.toFixed(2) + " PKR"
-                      : "N/A"}
+                      : "-"}
                   </td>
                 </tr>
               ))}
@@ -173,7 +186,7 @@ const Details = () => {
                 <td className="p-3">
                   {order?.totalAmount != null
                     ? order.totalAmount.toFixed(2) + " PKR"
-                    : "N/A"}
+                    : "-"}
                 </td>
               </tr>
               <tr className="border-t ">
@@ -197,11 +210,11 @@ const Details = () => {
           </table>
         </div>
         {/* <button
-          className=" bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
-          onClick={handleDownloadPDF}
-        >
-          Print
-        </button> */}
+        className=" bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
+        onClick={handleDownloadPDF}
+      >
+        Print
+      </button> */}
       </div>
     </div>
   );
