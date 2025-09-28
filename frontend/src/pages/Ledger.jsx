@@ -32,7 +32,7 @@ const Ledger = () => {
   }, []);
 
   return (
-    <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between  ">
+    <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between  max-w-7xl ">
       <div className="flex flex-col gap-5">
         <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
           <h1 className="font-bold text-4xl text-pink-900">Ledger</h1>

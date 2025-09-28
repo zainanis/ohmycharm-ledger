@@ -11,7 +11,7 @@ const Paginate = ({
   loading,
   search,
 }) => {
-  const itemsPerPage = 10;
+  const itemsPerPage = 8;
 
   const searchedProducts = useMemo(() => {
     if (search == "" || search == undefined) {

@@ -394,7 +394,7 @@ const Dashboard = () => {
   };
   console.log(monthExpense);
   return (
-    <div className="bg-white rounded-lg pb-4 shadow  p-6 flex flex-col gap-4">
+    <div className="bg-white rounded-lg pb-4 shadow  p-6 flex flex-col gap-4 max-w-7xl">
       <h2 className="font-bold text-4xl text-pink-900">Dashboard</h2>
       {loading.loading ? (
         <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
@@ -416,7 +416,7 @@ const Dashboard = () => {
             {/* <Card title="Expense this month" data={monthExpense[monthName]} /> */}
           </div>
 
-          <div className="flex  gap-6 justify-between  border-1 border-stone-200 rounded-xl min-w-full">
+          <div className="flex  justify-between  border-1 border-stone-200 rounded-xl min-w-full">
             <div className="flex gap-6 flex-col rounded-2xl p-6">
               <h1 className="mb-2 font-bold text-2xl">Orders </h1>
               <div className="w-xl">

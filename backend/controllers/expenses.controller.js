@@ -42,6 +42,7 @@ const createExpense = async (req, res) => {
           expenseId: newExpense._id,
           paymentMode: paymentMode,
           amount: cost,
+          date: date,
         },
       ],
       { session }
@@ -89,6 +90,7 @@ const updateExpenseById = async (req, res) => {
         expenseId: id,
         paymentMode: paymentMode,
         amount: cost,
+        date: date,
       },
       { session, runValidators: true }
     );

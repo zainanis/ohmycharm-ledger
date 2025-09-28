@@ -124,11 +124,15 @@ const Mytable = ({
             dataToRender.map((item) => (
               <tr
                 key={item._id}
-                className={
-                  who === "orders"
-                    ? "hover:bg-stone-100 text-pink-900"
-                    : " text-pink-900"
-                }
+                className={`text-pink-900
+                  ${who === "orders" ? "hover:bg-stone-100" : ""}
+                   ${
+                     who === "ledger"
+                       ? item.type === "Profit"
+                         ? "bg-green-100"
+                         : "bg-red-100"
+                       : ""
+                   }`}
                 onClick={
                   who === "orders"
                     ? () => {

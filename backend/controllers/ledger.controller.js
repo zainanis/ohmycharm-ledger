@@ -1,4 +1,5 @@
 const { Ledger } = require("../models/index");
+
 const getAllLedger = async (req, res) => {
   try {
     const allEntries = await Ledger.find()

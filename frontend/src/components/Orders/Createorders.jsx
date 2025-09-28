@@ -292,15 +292,20 @@ const Createorders = () => {
               disabled={loading.loading}
             >
               <option value="">Select a product</option>
-              {allProducts.map((product) => (
-                <option
-                  key={product._id}
-                  value={product._id}
-                  disabled={selectedProducts.some((p) => p._id === product._id)}
-                >
-                  {product.name + " " + product.price + ".Rs"}
-                </option>
-              ))}
+              {allProducts
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((product) => (
+                  <option
+                    key={product._id}
+                    value={product._id}
+                    disabled={selectedProducts.some(
+                      (p) => p._id === product._id
+                    )}
+                  >
+                    {product.name + " " + product.price + ".Rs"}
+                  </option>
+                ))}
             </select>
 
             <div className="flex flex-wrap mt-3 gap-3">
