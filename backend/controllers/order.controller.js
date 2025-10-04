@@ -20,6 +20,7 @@ const createOrder = async (req, res) => {
       recieveDate,
       paymentMode,
       products,
+      discount = 0,
     } = req.body;
 
     if (!(await Customer.findById(customerId)))
@@ -38,6 +39,7 @@ const createOrder = async (req, res) => {
           sentDate,
           recieveDate,
           paymentMode,
+          discount,
           totalAmount: 0,
         },
       ],
@@ -65,7 +67,7 @@ const createOrder = async (req, res) => {
       totalAmount += newprodorder.totalPrice;
       prodOrderDocs.push(newprodorder);
     }
-
+    totalAmount = totalAmount - discount;
     newOrder.totalAmount = totalAmount;
     await newOrder.save({ session });
 
@@ -124,8 +126,15 @@ const updateOrderById = async (req, res) => {
     const order = await Order.findById(id);
     if (!order) return res.status(404).json("Order does not exists");
 
-    const { status, orderDate, sentDate, recieveDate, paymentMode, products } =
-      req.body;
+    const {
+      status,
+      orderDate,
+      sentDate,
+      recieveDate,
+      paymentMode,
+      products,
+      discount,
+    } = req.body;
     let totalAmount = 0;
 
     let prodOrderDocs = [];
@@ -151,7 +160,7 @@ const updateOrderById = async (req, res) => {
 
           { session }
         );
-
+        totalAmount = totalAmount - discount;
         totalAmount += newprodorder.totalPrice;
         prodOrderDocs.push(newprodorder);
       }
@@ -166,7 +175,7 @@ const updateOrderById = async (req, res) => {
         ...(sentDate && { sentDate }),
         ...(recieveDate && { recieveDate }),
         ...(paymentMode && { paymentMode }),
-
+        ...(discount && { discount }),
         ...(products && { totalAmount }),
       },
 

@@ -6,7 +6,7 @@ import { useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { setCustomers } from "../../state/customerSlice";
 import { setProducts } from "../../state/productsSlice";
-import { addOrder, updateOrder } from "../../state/orderSlice";
+import { addOrder, setOrders, updateOrder } from "../../state/orderSlice";
 
 const Createorders = () => {
   const { id } = useParams();
@@ -21,9 +21,11 @@ const Createorders = () => {
   const [recieveDate, setRecievedate] = useState("");
   const [selectedProducts, setSelectedproducts] = useState([]);
   const [paymentMode, setPaymentmode] = useState("");
+  const [discount, setDiscount] = useState(0);
 
   const allCustomers = useSelector((state) => state.customers.allCustomers);
   const allProducts = useSelector((state) => state.products.allProducts);
+  const allOrders = useSelector((state) => state.orders.allOrders);
 
   useEffect(() => {
     if (allCustomers.length === 0) {
@@ -45,6 +47,16 @@ const Createorders = () => {
         .finally(() => setLoading({ loading: false, what: null }));
     }
 
+    if (allOrders.length === 0) {
+      setLoading({ loading: true, what: "Loading Orders..." });
+
+      axios
+        .get("http://localhost:5001/api/orders")
+        .then((res) => dispatch(setOrders(res.data)))
+        .catch((err) => console.log(err))
+        .finally(() => setLoading({ loading: false, what: null }));
+    }
+
     if (id && allProducts.length !== 0) {
       setLoading({ loading: true, what: "Loading Orders..." });
 
@@ -60,6 +72,7 @@ const Createorders = () => {
           setSentdate(order.sentDate?.slice(0, 10) || "");
           setRecievedate(order.recieveDate?.slice(0, 10) || "");
           setPaymentmode(order.paymentMode || "");
+          setDiscount(order.discount || 0);
 
           const selected = products.map((orderedProduct) => {
             const fullProduct = allProducts.find(
@@ -112,6 +125,7 @@ const Createorders = () => {
       recieveDate: recieveDate === "" ? undefined : recieveDate,
       paymentMode,
       products,
+      discount,
     };
 
     const selectedCustomer = allCustomers.find((c) => c._id === customerId);
@@ -264,6 +278,18 @@ const Createorders = () => {
               <option value="Cash">Cash</option>
               <option value="Online">Online</option>
             </select>
+          </div>
+
+          <div className="flex flex-col text-pink-900">
+            <label htmlFor="Price">Discount:</label>
+            <input
+              className="border-1 border-stone-300 rounded-lg px-5 py-2"
+              type="number"
+              required
+              min={0}
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+            />
           </div>
 
           {/* Products */}

@@ -178,6 +178,16 @@ const Details = () => {
                   </td>
                 </tr>
               ))}
+              <tr className="border-t-2 ">
+                <td className="p-3 font-bold">Discount</td>
+                <td className="p-3"></td>
+                <td className="p-3"></td>
+                <td className="p-3">
+                  {order?.discount != null
+                    ? order.discount.toFixed(2) + " PKR"
+                    : "-"}
+                </td>
+              </tr>
 
               <tr className="border-t-2 ">
                 <td className="p-3 font-bold">Total Price</td>

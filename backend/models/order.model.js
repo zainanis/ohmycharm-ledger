@@ -27,6 +27,10 @@ const orderSchema = new mongoose.Schema(
       enum: ["Cash", "Online"],
       required: true,
     },
+    discount: {
+      type: Number,
+      default: 0,
+    },
     totalAmount: {
       type: Number,
       default: 0,
