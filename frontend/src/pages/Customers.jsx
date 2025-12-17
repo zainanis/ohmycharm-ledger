@@ -7,6 +7,8 @@ import { setCustomers } from "../state/customerSlice.js";
 
 import { useDispatch, useSelector } from "react-redux";
 
+import api from "../utils/client.js";
+
 const Customers = () => {
   const dispatch = useDispatch();
   const allCustomers = useSelector((state) => state.customers.allCustomers);
@@ -18,8 +20,8 @@ const Customers = () => {
   useEffect(() => {
     if (allCustomers.length === 0) {
       setLoading({ loading: true, what: "Customers" });
-      axios
-        .get("http://localhost:5001/api/customers")
+      api
+        .get("/api/customers")
         .then((res) => {
           console.log(res);
           dispatch(setCustomers(res.data));

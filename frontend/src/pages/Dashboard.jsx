@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import axios from "axios";
+import api from "../utils/client.js";
 import { useDispatch, useSelector } from "react-redux";
 import { setOrders } from "../state/orderSlice.js";
 import { setExpenses } from "../state/expenseSlice.js";
@@ -40,8 +40,8 @@ const Dashboard = () => {
   useEffect(() => {
     if (allOrders.length === 0) {
       setLoading({ loading: true, what: "Orders" });
-      axios
-        .get("http://localhost:5001/api/orders")
+      api
+        .get("/api/orders")
         .then((res) => {
           dispatch(setOrders(res.data));
         })
@@ -54,8 +54,8 @@ const Dashboard = () => {
     }
     if (allExpenses.length === 0) {
       setLoading({ loading: true, what: "Expenses" });
-      axios
-        .get("http://localhost:5001/api/expenses")
+      api
+        .get("/api/expenses")
         .then((res) => {
           dispatch(setExpenses(res.data));
         })

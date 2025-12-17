@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/client";
 import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
 
@@ -94,8 +94,8 @@ const Products = () => {
     if (allProducts.length === 0) {
       setLoading({ loading: true, what: "Products" });
 
-      axios
-        .get("http://localhost:5001/api/products")
+      api
+        .get("/api/products")
         .then((res) => {
           console.log(res);
 

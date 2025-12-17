@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/client.js";
 import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
 import Mytable from "../components/utils/Mytable.jsx";
@@ -22,8 +22,8 @@ const Expenses = () => {
     if (allExpenses.length === 0) {
       setLoading({ loading: true, what: "Loading Expenses..." });
 
-      axios
-        .get("http://localhost:5001/api/expenses")
+      api
+        .get("/api/expenses")
         .then((res) => {
           dispatch(setExpenses(res.data));
           console.log(res.data);

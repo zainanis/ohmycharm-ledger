@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/client.js";
 import Mytable from "../components/utils/Mytable.jsx";
 
 const Ledger = () => {
@@ -17,8 +17,8 @@ const Ledger = () => {
   useEffect(() => {
     setLoading({ loading: true, what: "Loading Ledger..." });
 
-    axios
-      .get("http://localhost:5001/api/ledger")
+    api
+      .get("/api/ledger")
       .then((res) => {
         setLedger(res.data);
         console.log(res.data);

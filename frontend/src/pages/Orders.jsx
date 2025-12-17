@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../utils/client.js";
 import { FaPlus } from "react-icons/fa";
 import { NavLink } from "react-router";
 import Mytable from "../components/utils/Mytable.jsx";
@@ -24,8 +24,8 @@ const Orders = () => {
   useEffect(() => {
     if (allOrders.length === 0) {
       setLoading({ loading: true, what: "Orders" });
-      axios
-        .get("http://localhost:5001/api/orders")
+      api
+        .get("/api/orders")
         .then((res) => {
           dispatch(setOrders(res.data));
           console.log(res.data);
