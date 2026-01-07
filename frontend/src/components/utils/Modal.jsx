@@ -13,7 +13,7 @@ const Modal = ({ onClose, name, id, who }) => {
   const dispatch = useDispatch();
   const doDelete = () => {
     api
-      .delete(`http://localhost:5001/api/${who}/${id}`)
+      .delete(`/api/${who}/${id}`)
       .then(() => {
         switch (who) {
           case "expenses":
