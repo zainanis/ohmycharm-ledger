@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../utils/client.js";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
@@ -28,8 +28,8 @@ export const Createproduct = () => {
       if (allProducts.length === 0) {
         setLoading({ loading: true, what: "Loading Product..." });
 
-        axios
-          .get("http://localhost:5001/api/products")
+        api
+          .get("/api/products")
           .then((res) => {
             dispatch(setProducts(res.data));
             console.log(res.data);
@@ -56,8 +56,8 @@ export const Createproduct = () => {
     const newPost = { name, price: parseFloat(price), description, status };
     console.log(newPost);
     const request = id
-      ? axios.put(`http://localhost:5001/api/products/${id}`, newPost)
-      : axios.post("http://localhost:5001/api/products", newPost);
+      ? api.put(`/api/products/${id}`, newPost)
+      : api.post("/api/products", newPost);
     setLoading({ loading: true, what: "Submitting Products..." });
     request
       .then((res) => {

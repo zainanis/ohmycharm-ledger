@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, NavLink } from "react-router";
-import axios from "axios";
+import api from "../../utils/client.js";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { FaChevronCircleLeft } from "react-icons/fa";
@@ -20,9 +20,7 @@ const Details = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const orderRes = await axios.get(
-          `http://localhost:5001/api/orders/${id}`
-        );
+        const orderRes = await api.get(`/api/orders/${id}`);
         const order = orderRes.data.order;
         setOrder(order);
         setProducts(orderRes.data.products);
@@ -30,8 +28,8 @@ const Details = () => {
         const customerId = order.customerId;
         console.log("Order Data:", orderRes.data);
 
-        const temp = await axios
-          .get(`http://localhost:5001/api/customers/${customerId}`)
+        const temp = await api
+          .get(`/api/customers/${customerId}`)
           .then((res) => {
             return res.data;
           });

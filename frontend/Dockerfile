@@ -1,33 +1,16 @@
-# Stage 1: Build React app
-FROM node:20-alpine AS build
+FROM node:20
 
 WORKDIR /app
 
-# Copy only package files first for caching
+ENV NODE_ENV=development
+
 COPY package*.json ./
 
-# Install dependencies (faster & deterministic)
-RUN npm ci --silent
+# Install all dependencies including devDependencies
+RUN npm install
 
-# Copy the rest of the source code
 COPY . .
 
-# Build the app
-RUN npm run build
-
-# Stage 2: Serve with "serve"
-FROM node:20-alpine AS production
-
-WORKDIR /app
-
-# Install 'serve' globally
-RUN npm install -g serve --silent
-
-# Copy build artifacts from previous stage
-COPY --from=build /app/dist ./dist
-
-# Expose port
 EXPOSE 3000
 
-# Start the app
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["npx", "vite", "--host", "--port", "3000"]

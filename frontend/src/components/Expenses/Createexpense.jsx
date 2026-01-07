@@ -9,6 +9,7 @@ import {
   setExpenses,
   updateExpense,
 } from "../../state/expenseSlice";
+import api from "../../utils/client.js";
 
 const Createexpense = () => {
   const { id } = useParams();
@@ -29,8 +30,8 @@ const Createexpense = () => {
     if (id) {
       if (allExpenses.length == 0) {
         setLoading({ loading: true, what: "Loading Expense..." });
-        axios
-          .get("http://localhost:5001/api/expenses")
+        api
+          .get("/api/expenses")
           .then((res) => {
             dispatch(setExpenses(res.data));
             console.log(res.data);
@@ -65,8 +66,8 @@ const Createexpense = () => {
     console.log(expense);
 
     const request = id
-      ? axios.put(`http://localhost:5001/api/expenses/${id}`, expense)
-      : axios.post("http://localhost:5001/api/expenses", expense);
+      ? api.put(`/api/expenses/${id}`, expense)
+      : api.post("/api/expenses", expense);
     setLoading({ loading: true, what: "Submitting Expense..." });
     request
       .then((res) => {

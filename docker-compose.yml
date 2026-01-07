@@ -1,20 +1,24 @@
-version: "3.8"
-
 services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     environment:
-      - NODE_ENV=${NODE_ENV}
+      - CHOKIDAR_USEPOLLING=true
+    command: npm run dev -- --host
 
   backend:
     build: ./backend
     ports:
       - "5001:5001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     environment:
-      - NODE_ENV=${NODE_ENV}
-      - PORT=${PORT}
+      - NODE_ENV=development
+      - PORT=5001
       - MONGO_URI=${MONGO_URI}
-    depends_on:
-      - frontend
+    command: npm start

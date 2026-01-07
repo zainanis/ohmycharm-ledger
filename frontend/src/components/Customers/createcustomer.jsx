@@ -9,6 +9,7 @@ import {
   updateCustomer,
   setCustomers,
 } from "../../state/customerSlice";
+import api from "../../utils/client.js";
 
 export const Createcustomer = () => {
   const { id } = useParams();
@@ -27,8 +28,8 @@ export const Createcustomer = () => {
     if (id) {
       if (allcustomers.length === 0) {
         setLoading({ loading: true, what: "Loading Customer..." });
-        axios
-          .get("http://localhost:5001/api/customers")
+        api
+          .get("/api/customers")
           .then((res) => {
             console.log(res);
             dispatch(setCustomers(res.data));
@@ -57,8 +58,8 @@ export const Createcustomer = () => {
       email,
     };
     const request = id
-      ? axios.put(`http://localhost:5001/api/customers/${id}`, customer)
-      : axios.post("http://localhost:5001/api/customers", customer);
+      ? api.put(`/api/customers/${id}`, customer)
+      : api.post("/api/customers", customer);
     setLoading({ loading: true, what: "Submitting Customer..." });
     request
       .then((res) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../utils/client.js";
 import { NavLink, useNavigate } from "react-router";
 import { FaChevronCircleLeft } from "react-icons/fa";
 import { useParams } from "react-router";
@@ -30,8 +30,8 @@ const Createorders = () => {
   useEffect(() => {
     if (allCustomers.length === 0) {
       setLoading({ loading: true, what: "Loading Customers..." });
-      axios
-        .get("http://localhost:5001/api/customers")
+      api
+        .get("/api/customers")
         .then((res) => dispatch(setCustomers(res.data)))
         .catch((err) => console.log(err))
         .finally(() => setLoading({ loading: false, what: null }));
@@ -40,8 +40,8 @@ const Createorders = () => {
     if (allProducts.length === 0) {
       setLoading({ loading: true, what: "Loading Products..." });
 
-      axios
-        .get("http://localhost:5001/api/products")
+      api
+        .get("/api/products")
         .then((res) => dispatch(setProducts(res.data)))
         .catch((err) => console.log(err))
         .finally(() => setLoading({ loading: false, what: null }));
@@ -50,8 +50,8 @@ const Createorders = () => {
     if (allOrders.length === 0) {
       setLoading({ loading: true, what: "Loading Orders..." });
 
-      axios
-        .get("http://localhost:5001/api/orders")
+      api
+        .get("/api/orders")
         .then((res) => dispatch(setOrders(res.data)))
         .catch((err) => console.log(err))
         .finally(() => setLoading({ loading: false, what: null }));
@@ -60,8 +60,8 @@ const Createorders = () => {
     if (id && allProducts.length !== 0) {
       setLoading({ loading: true, what: "Loading Orders..." });
 
-      axios
-        .get(`http://localhost:5001/api/orders/${id}`)
+      api
+        .get(`/api/orders/${id}`)
         .then((res) => {
           const order = res.data.order;
           const products = res.data.products;
@@ -130,8 +130,8 @@ const Createorders = () => {
 
     const selectedCustomer = allCustomers.find((c) => c._id === customerId);
     const request = id
-      ? axios.put(`http://localhost:5001/api/orders/${id}`, order)
-      : axios.post("http://localhost:5001/api/orders", order);
+      ? api.put(`/api/orders/${id}`, order)
+      : api.post("/api/orders", order);
 
     setLoading({ loading: true, what: "submitting" });
 
