@@ -31,6 +31,10 @@ const Paginate = ({
     );
   }, [selectedStatus, searchedProducts]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus, search, setCurrentPage]);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredProducts.slice(
@@ -38,7 +42,7 @@ const Paginate = ({
     indexOfLastItem
   );
 
-  const totalPages = Math.ceil(allProducts.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
@@ -63,7 +67,7 @@ const Paginate = ({
               : ""}
           </div>
 
-          {filteredProducts.length > 10 && (
+          {filteredProducts.length > itemsPerPage && (
             <div className="flex justify-center items-center gap-3 flex-wrap">
               {/* Previous Button */}
               <button
