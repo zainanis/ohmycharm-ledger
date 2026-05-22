@@ -22,7 +22,7 @@ jobs:
           echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
           echo "MONGOSESSION_SECRET_URI=${{ secrets.MONGOSESSION_SECRET_URI }}" >> .env
           echo "FRONTEND_URL=https://ohmycharm.zainanis.com" >> .env
-          echo "VITE_API_BASE_URL=https://api.ohmycharm.zainanis.com" >> .env
+          echo "VITE_API_BASE_URL=https://ohmycharm-api.zainanis.com" >> .env
 
       - name: Rebuild and restart containers
         working-directory: /opt/ohmycharm-ledger
