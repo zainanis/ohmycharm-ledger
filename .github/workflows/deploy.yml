@@ -23,6 +23,7 @@ jobs:
           echo "MONGOSESSION_SECRET_URI=${{ secrets.MONGOSESSION_SECRET_URI }}" >> .env
           echo "FRONTEND_URL=https://ohmycharm.zainanis.com" >> .env
           echo "VITE_API_BASE_URL=https://ohmycharm-api.zainanis.com" >> .env
+          echo "CALLBACK_URL=https://ohmycharm-api.zainanis.com/auth/google/callback" >> .env
 
       - name: Rebuild and restart containers
         working-directory: /opt/ohmycharm-ledger

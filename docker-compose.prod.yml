@@ -23,6 +23,7 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - SESSION_SECRET=${MONGOSESSION_SECRET_URI}
       - FRONTEND_URL=${FRONTEND_URL}
+      - CALLBACK_URL=${CALLBACK_URL}
     command: node server.js
     restart: always
 networks:
