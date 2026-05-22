@@ -1,18 +1,21 @@
 import React from "react";
 import Logo from "./Logo";
 import RouteSelect from "./RouteSelect";
-import { IoMenu } from "react-icons/io5";
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   return (
-    <div>
-      <IoMenu size={30} className="sm:hidden" />
+    <>
+      {/* Backdrop overlay (mobile only) */}
+      <div
+        className={`sidebar-backdrop ${isOpen ? "sidebar-backdrop--open" : ""}`}
+        onClick={onClose}
+      />
 
-      <div className="overflow-y sticky top-4 h-[calc(100vh-40px)]   ">
+      <aside className={`sidebar ${isOpen ? "sidebar--open" : ""}`}>
         <Logo />
-        <RouteSelect />
-      </div>
-    </div>
+        <RouteSelect onNavClick={onClose} />
+      </aside>
+    </>
   );
 };
 

@@ -6,10 +6,16 @@ const {
   updateProduct,
   deleteProduct,
 } = require("../controllers/product.controller");
+const validate = require("../middleware/validate");
 
 const router = express.Router();
 
-router.post("/", createProduct);
+const productSchema = {
+  name: { required: true, type: "string" },
+  price: { required: true },
+};
+
+router.post("/", validate(productSchema), createProduct);
 
 router.get("/", getAllProducts);
 

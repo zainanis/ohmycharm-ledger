@@ -1,88 +1,95 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../utils/client";
-import { FaPlus } from "react-icons/fa";
+import { Plus } from "lucide-react";
 import { NavLink } from "react-router";
-
 import Paginate from "../components/utils/Paginate";
-import { useDispatch, useSelector } from "react-redux";
-import { setProducts } from "../state/productsSlice";
+import ProductCard from "../components/Products/ProductCard";
+
+const LIMIT = 12;
 
 const Products = () => {
+  const [data,           setData]           = useState([]);
+  const [total,          setTotal]          = useState(0);
+  const [currentPage,    setCurrentPage]    = useState(1);
   const [selectedStatus, setSelectedStatus] = useState("All");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const allProducts = useSelector((state) => state.products.allProducts);
-  const dispatch = useDispatch();
-  const [loading, setLoading] = useState({ loading: false, what: null });
+  const [search,         setSearch]         = useState("");
+  const [loading,        setLoading]        = useState({ loading: false, what: null });
 
-  useEffect(() => {
-    if (allProducts.length === 0) {
-      setLoading({ loading: true, what: "Products" });
+  const searchTimer = useRef(null);
 
-      api
-        .get("/api/products")
-        .then((res) => {
-          console.log(res);
-
-          dispatch(setProducts(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => setLoading({ loading: false, what: null }));
-    }
-  }, []);
-
-  const handleStatusChange = (e) => {
-    setSelectedStatus(e.target.value);
-    setCurrentPage(1);
+  const fetchProducts = (overrides = {}) => {
+    const params = {
+      page: currentPage,
+      limit: LIMIT,
+      ...(selectedStatus !== "All" && { status: selectedStatus }),
+      ...(search.trim() && { search: search.trim() }),
+      ...overrides,
+    };
+    setLoading({ loading: true, what: "Products" });
+    api.get("/api/products", { params })
+      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
+      .catch(console.error)
+      .finally(() => setLoading({ loading: false, what: null }));
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchProducts({ page: 1 });
+  }, [selectedStatus]);
+
+  useEffect(() => {
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchProducts({ page: 1, search: search.trim() });
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [search]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [currentPage]);
+
   return (
-    <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between max-w-7xl ">
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Products</h1>
-          <input
-            type="text"
-            className="border-1 border-solid border-stone-200 rounded-lg pr-20 py-2 pl-5"
-            placeholder="Search Products"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="flex justify-end px-5 gap-5 ">
-          <NavLink
-            className=" flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
-            to="add"
-          >
-            <FaPlus />
-            Add Product
-          </NavLink>
-
-          <select
-            value={selectedStatus}
-            onChange={handleStatusChange}
-            className="border px-4 py-2 rounded border-stone-200 text-stone-500"
-          >
-            <option value="All">All</option>
-            <option value="Available">Available</option>
-            <option value="Discontinued">Discontinued</option>
-            <option value="Out of Stock">Currently Unavailable</option>
-          </select>
-        </div>
+    <div className="page-card">
+      <div className="page-header">
+        <h1 className="page-title">Products</h1>
+        <input
+          type="text"
+          className="form-control search-input"
+          placeholder="Search products…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
-      <Paginate
-        who="Product"
-        loading={loading}
-        allProducts={allProducts}
-        selectedStatus={selectedStatus}
-        currentPage={currentPage}
-        search={search}
-        setCurrentPage={setCurrentPage}
-      />
+      <div className="page-body">
+        <div className="flex justify-end gap-3">
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+            className="form-control"
+          >
+            <option value="All">All statuses</option>
+            <option value="Available">Available</option>
+            <option value="Discontinued">Discontinued</option>
+            <option value="Out of Stock">Out of Stock</option>
+          </select>
+          <NavLink className="btn btn-success" to="add">
+            <Plus size={16} /> Add Product
+          </NavLink>
+        </div>
+
+        <Paginate
+          items={data}
+          renderItem={(product) => <ProductCard key={product._id} {...product} />}
+          loading={loading}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          total={total}
+          itemsPerPage={LIMIT}
+        />
+      </div>
     </div>
   );
 };

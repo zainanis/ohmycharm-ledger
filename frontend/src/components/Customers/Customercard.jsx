@@ -1,76 +1,123 @@
 import { useNavigate } from "react-router";
 import Modal from "../utils/Modal";
 import { useState } from "react";
-import { IoPersonCircle } from "react-icons/io5";
+import { User, Phone, MapPin, Mail } from "lucide-react";
 
 const Customercard = ({ _id, name, phoneNumber, address, email }) => {
   const navigate = useNavigate();
-  const [showModal, SetshowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+
+  const initials = name
+    ? name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+    : "?";
 
   return (
-    <div className="bg-white max-w-70 min-w-70 min-h-80 max-h-80 px-6 py-8 flex flex-col justify-between rounded-xl border-solid border-1 border-stone-200 hover:shadow-2xl transition-shadow ">
-      <div className="min-h-26 flex flex-col gap-4">
-        <div className="flex gap-5 items-center justify-left">
-          <IoPersonCircle className="text-pink-900" size={40} />
-
-          <h1 className="text-pink-900 text-lg font-bold">{name} </h1>
+    <div
+      className="bg-white flex flex-col justify-between rounded-2xl transition-all duration-200 w-full"
+      style={{
+        minHeight: 260,
+        border: "1px solid var(--border-light)",
+        borderTop: "3px solid var(--rose-deep)",
+        boxShadow: "var(--shadow-sm)",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-md)")}
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = "var(--shadow-sm)")}
+    >
+      {/* Card body */}
+      <div className="flex flex-col gap-4 flex-1 p-5">
+        {/* Avatar + Name */}
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm"
+            style={{
+              background: "var(--rose-deep)",
+              color: "white",
+              fontFamily: "'DM Sans', sans-serif",
+              letterSpacing: "0.04em",
+            }}
+          >
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <h2
+              className="font-semibold leading-tight truncate"
+              style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: "1.2rem",
+                color: "var(--text-primary)",
+              }}
+            >
+              {name}
+            </h2>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Customer</p>
+          </div>
         </div>
 
-        <h1 className="text-pink-900 ">
-          <span className="font-bold">Phone Number:</span> {phoneNumber}
-        </h1>
-        <h1 className="text-pink-900">
-          {address ? (
-            <>
-              <span className="font-bold ">Address: </span>
-              {address.split(" ").length > 14
-                ? address.split(" ").slice(0, 14).join(" ") + " ..."
-                : address}
-            </>
-          ) : (
-            ""
+        {/* Contact details */}
+        <div
+          className="flex flex-col gap-2.5 rounded-xl p-3"
+          style={{ background: "var(--cream)" }}
+        >
+          {phoneNumber && (
+            <Row icon={<Phone size={13} />} value={String(phoneNumber)} />
           )}
-        </h1>
-        <h1 className="text-pink-900 ">
-          <span className="font-bold">Email:</span> {email}{" "}
-        </h1>
+          {email && (
+            <Row icon={<Mail size={13} />} value={email} truncate />
+          )}
+          {address && (
+            <Row
+              icon={<MapPin size={13} />}
+              value={
+                address.split(" ").length > 8
+                  ? address.split(" ").slice(0, 8).join(" ") + "…"
+                  : address
+              }
+            />
+          )}
+          {!phoneNumber && !email && !address && (
+            <p className="text-xs italic" style={{ color: "var(--border)" }}>No contact details</p>
+          )}
+        </div>
       </div>
 
-      <div className="flex gap-2">
+      {/* Card footer */}
+      <div
+        className="flex gap-2 px-5 py-4"
+        style={{ borderTop: "1px solid var(--border-light)" }}
+      >
         <button
-          className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
-          type="submit"
-          onClick={() => {
-            navigate(`/customers/${_id}`);
-          }}
+          className="btn btn-outline flex-1 justify-center"
+          style={{ padding: "7px 12px" }}
+          onClick={() => navigate(`/customers/${_id}`)}
         >
-          Update
+          Edit
         </button>
         <button
-          className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
-          type="submit"
-          onClick={() => {
-            SetshowModal(true);
-          }}
+          className="btn btn-danger flex-1 justify-center"
+          style={{ padding: "7px 12px" }}
+          onClick={() => setShowModal(true)}
         >
           Delete
         </button>
       </div>
 
-      {showModal ? (
-        <Modal
-          onClose={() => {
-            SetshowModal(false);
-          }}
-          who="customers"
-          name={name}
-          id={_id}
-        />
-      ) : (
-        ""
+      {showModal && (
+        <Modal onClose={() => setShowModal(false)} who="customers" name={name} id={_id} />
       )}
     </div>
   );
 };
+
+const Row = ({ icon, value, truncate }) => (
+  <div className="flex items-center gap-2">
+    <span style={{ color: "var(--rose-deep)", flexShrink: 0 }}>{icon}</span>
+    <span
+      className={`text-sm ${truncate ? "truncate" : ""}`}
+      style={{ color: "var(--text-primary)" }}
+    >
+      {value}
+    </span>
+  </div>
+);
 
 export default Customercard;

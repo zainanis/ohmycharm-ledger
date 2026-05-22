@@ -1,163 +1,160 @@
 import { useEffect, useState } from "react";
 import api from "../utils/client.js";
 import Mytable from "../components/utils/Mytable.jsx";
+import { Download, X } from "lucide-react";
+
+const LIMIT = 20;
 
 const Ledger = () => {
-  const [ledger, setLedger] = useState([]);
+  const [data,      setData]      = useState([]);
+  const [total,     setTotal]     = useState(0);
+  const [page,      setPage]      = useState(1);
+  const [filter,    setFilter]    = useState("All");
+  const [filterBy,  setFilterBy]  = useState("type");
+  const [loading,   setLoading]   = useState({ loading: false, what: null });
+  const [from,      setFrom]      = useState("");
+  const [to,        setTo]        = useState("");
+  const [dateError, setDateError] = useState("");
 
-  const [filter, setFilter] = useState("All");
-  const [filterBy, setFilterby] = useState("type");
-  const [loading, setLoading] = useState({ loading: false, what: null });
+  const buildParams = (overrides = {}) => ({
+    page,
+    limit: LIMIT,
+    ...(filter !== "All" && { [filterBy]: filter }),
+    ...(from && { from }),
+    ...(to && { to }),
+    ...overrides,
+  });
 
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-
-  const [search, setSearch] = useState("");
+  const fetchLedger = (overrides = {}) => {
+    setLoading({ loading: true, what: "Ledger" });
+    api.get("/api/ledger", { params: buildParams(overrides) })
+      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
+      .catch(console.error)
+      .finally(() => setLoading({ loading: false, what: null }));
+  };
 
   useEffect(() => {
-    setLoading({ loading: true, what: "Loading Ledger..." });
+    setPage(1);
+    fetchLedger({ page: 1 });
+  }, [filter, filterBy, from, to]);
 
-    api
-      .get("/api/ledger")
-      .then((res) => {
-        setLedger(res.data);
-        console.log(res.data);
-      })
-      .catch((err) => {
-        console.log(err);
-      })
-      .finally(() => {
-        setLoading({ loading: false, what: null });
-      });
-  }, []);
+  useEffect(() => {
+    fetchLedger();
+  }, [page]);
+
+  const handleFrom = (val) => {
+    if (to && new Date(val) > new Date(to)) { setDateError("'From' date cannot be later than 'To' date."); return; }
+    setDateError(""); setFrom(val);
+  };
+  const handleTo = (val) => {
+    if (from && new Date(val) < new Date(from)) { setDateError("'To' date cannot be earlier than 'From' date."); return; }
+    setDateError(""); setTo(val);
+  };
+  const clearDates = () => { setFrom(""); setTo(""); setDateError(""); };
+
+  const handleExportCSV = async () => {
+    // Fetch all filtered entries (no pagination) for export
+    const res = await api.get("/api/ledger", { params: buildParams({ page: 1, limit: 999999 }) });
+    const rows = res.data.data;
+
+    const headers = ["Date", "Source", "Type", "Payment Mode", "Amount", "Running Total"];
+    const csvRows = [
+      headers.join(","),
+      ...rows.map((r) =>
+        [
+          new Date(r.date).toLocaleDateString("en-GB"),
+          `"${r.source ?? ""}"`,
+          r.type,
+          r.paymentMode ?? "",
+          r.amount,
+          r.runningTotal,
+        ].join(",")
+      ),
+    ];
+
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ledger-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
-    <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between  max-w-7xl ">
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Ledger</h1>
-          {/* <input
-            type="text"
-            className="border-1 border-solid border-stone-200 rounded-lg pr-20 py-2 pl-5"
-            placeholder="Search Expenses"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          /> */}
-        </div>
+    <div className="page-card">
+      <div className="page-header">
+        <h1 className="page-title">Ledger</h1>
+        <button className="btn btn-success" onClick={handleExportCSV}>
+          <Download size={15} /> Export CSV
+        </button>
+      </div>
 
-        <div className="flex justify-between px-5 gap-5 h-15 ">
-          <div className="flex gap-5 items-end">
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">From :</h2>
-                <input
-                  value={from}
-                  onChange={(e) => {
-                    const newFromDate = e.target.value;
-                    if (to && new Date(newFromDate) > new Date(to)) {
-                      alert("'From' date cannot be later than the 'To' date.");
-                      return;
-                    }
-                    setFrom(newFromDate);
-                  }}
-                  type="date"
-                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
-                />
-              </div>
+      <div className="page-body">
+        <div className="flex flex-wrap gap-4 items-end justify-between">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>From</label>
+              <input type="date" value={from} onChange={(e) => handleFrom(e.target.value)} className="form-control" />
             </div>
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">To :</h2>
-                <input
-                  value={to}
-                  onChange={(e) => {
-                    const newToDate = e.target.value;
-                    if (from && new Date(newToDate) < new Date(from)) {
-                      alert(
-                        "The 'To' date cannot be earlier than the 'From' date."
-                      );
-                      return;
-                    }
-                    setTo(newToDate);
-                  }}
-                  min={from}
-                  type="date"
-                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
-                />
-              </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>To</label>
+              <input type="date" value={to} min={from} onChange={(e) => handleTo(e.target.value)} className="form-control" />
             </div>
-
-            <button
-              className=" flex items-center h-10 w-30 justify-center gap-2 px-4 py-2 rounded-2xl bg-red-600 text-white hover:bg-red-700 hover:shadow-lg"
-              onClick={() => {
-                setTo("");
-                setFrom("");
-              }}
-            >
-              Clear Dates
-            </button>
+            {(from || to) && (
+              <button className="btn" style={{ padding: "8px 14px", background: "var(--rose-light)", color: "var(--rose-deep)" }} onClick={clearDates}>
+                <X size={14} /> Clear
+              </button>
+            )}
           </div>
 
-          <div className="flex justify-end items-end px-5 gap-5 h-15 ">
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">Filter By:</h2>
-                <select
-                  value={filterBy}
-                  onChange={(e) => {
-                    setFilterby(e.target.value);
-                    setFilter("All");
-                  }}
-                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
-                >
-                  <option value="type">Type</option>
-                  <option value="paymentMode">Payment Mode</option>
-                </select>
-              </div>
-
-              <div>
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  className="border px-4 py-2 h-10 w-45  rounded border-stone-200 text-stone-500"
-                >
-                  {filterBy === "type" ? (
-                    <>
-                      <option value="All">All</option>
-                      <option value="Profit">Profits</option>
-                      <option value="Advertisement,Goods Purchases">
-                        Expenses
-                      </option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="All">All</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Online">Online</option>
-                    </>
-                  )}
-                </select>
-              </div>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Filter By</label>
+              <select value={filterBy} onChange={(e) => { setFilterBy(e.target.value); setFilter("All"); }} className="form-control">
+                <option value="type">Type</option>
+                <option value="paymentMode">Payment Mode</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>&nbsp;</label>
+              <select value={filter} onChange={(e) => setFilter(e.target.value)} className="form-control">
+                {filterBy === "type" ? (
+                  <>
+                    <option value="All">All</option>
+                    <option value="Profit">Profits</option>
+                    <option value="Advertisement,Goods Purchase">Expenses</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="All">All</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Online">Online</option>
+                  </>
+                )}
+              </select>
             </div>
           </div>
         </div>
+
+        {dateError && <p className="text-sm" style={{ color: "#dc2626" }}>{dateError}</p>}
+
         <Mytable
           who="ledger"
-          data={ledger}
+          data={data}
           loading={loading}
           header={[
-            { label: "Source", path: ".source" },
-            { label: "Payment Mode", path: ".paymentMode" },
-            { label: "type", path: ".type" },
-            { label: "Amount", path: ".amount" },
-            { label: "Date", path: ".date" },
-            { label: "Total Amount", path: ".totalAmount" },
+            { label: "Source",        path: ".source" },
+            { label: "Payment Mode",  path: ".paymentMode" },
+            { label: "Type",          path: ".type" },
+            { label: "Amount",        path: ".amount" },
+            { label: "Date",          path: ".date" },
+            { label: "Running Total", path: ".runningTotal" },
           ]}
-          filter={filter}
-          filterBy={filterBy}
-          orderBy="date"
-          from={from}
-          to={to}
+          total={total}
+          page={page}
+          limit={LIMIT}
+          onPageChange={setPage}
         />
       </div>
     </div>

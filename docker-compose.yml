@@ -16,9 +16,12 @@ services:
       - "5001:5001"
     volumes:
       - ./backend:/app
-      - /app/node_modules
+      # - /app/node_modules
     environment:
       - NODE_ENV=development
       - PORT=5001
       - MONGO_URI=${MONGO_URI}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SESSION_SECRET=${MONGOSESSION_SECRET_URI}
     command: npm start

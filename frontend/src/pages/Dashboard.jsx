@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-
 import api from "../utils/client.js";
-import { useDispatch, useSelector } from "react-redux";
-import { setOrders } from "../state/orderSlice.js";
-import { setExpenses } from "../state/expenseSlice.js";
 import Card from "../components/utils/Card.jsx";
 import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
@@ -18,6 +14,13 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import {
+  ShoppingBag,
+  TrendingUp,
+  DollarSign,
+  CreditCard,
+  Gem,
+} from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -28,427 +31,307 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
+const BAR_COLORS = [
+  "#d4856a",
+  "#c9976b",
+  "#e8b4a0",
+  "#dab896",
+  "#e8c9b8",
+  "#c4a0c0",
+  "#b89aaa",
+  "#d4b0c8",
+  "#c0a8c0",
+  "#a89098",
+  "#d0a8b8",
+  "#e0b8c8",
+];
+
+const CHART_OPTS = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { display: false }, grid: { display: false } },
+    y: {
+      grid: { color: "#f5edf2" },
+      ticks: { color: "#8a7380", font: { size: 11 } },
+    },
+  },
+};
+
+const ORDER_CHART_OPTS = {
+  ...CHART_OPTS,
+  scales: {
+    ...CHART_OPTS.scales,
+    y: {
+      ...CHART_OPTS.scales.y,
+      ticks: {
+        ...CHART_OPTS.scales.y.ticks,
+        stepSize: 1,
+        callback: (v) => (Number.isInteger(v) ? v : null),
+      },
+    },
+  },
+};
+
+const DashboardSkeleton = () => (
+  <div className="flex flex-col gap-5">
+    <div className="stat-grid">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="skeleton rounded-2xl" style={{ height: 110 }} />
+      ))}
+    </div>
+    <div className="chart-grid">
+      <div className="skeleton rounded-2xl" style={{ height: 340 }} />
+      <div className="skeleton rounded-2xl" style={{ height: 340 }} />
+      <div className="skeleton rounded-2xl" style={{ height: 340 }} />
+    </div>
+  </div>
+);
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 const Dashboard = () => {
-  const dispatch = useDispatch();
-  const [loading, setLoading] = useState({ loading: false, what: null });
-  const allOrders = useSelector((state) => state.orders.allOrders);
-  const allExpenses = useSelector((state) => state.expenses.allExpenses);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    if (allOrders.length === 0) {
-      setLoading({ loading: true, what: "Orders" });
-      api
-        .get("/api/orders")
-        .then((res) => {
-          dispatch(setOrders(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => {
-          setLoading({ loading: false, what: null });
-        });
-    }
-    if (allExpenses.length === 0) {
-      setLoading({ loading: true, what: "Expenses" });
-      api
-        .get("/api/expenses")
-        .then((res) => {
-          dispatch(setExpenses(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => {
-          setLoading({ loading: false, what: null });
-        });
-    }
+    api
+      .get("/api/dashboard")
+      .then((res) => setData(res.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
-  const barColors = [
-    "#FFB3BA", // Pastel red
-    "#FFDFBA", // Pastel orange
-    "#FFFFBA", // Pastel yellow
-    "#BAFFC9", // Pastel green
-    "#BAE1FF", // Pastel blue
-    "#D7BAFF", // Pastel purple
-    "#FFC0CB", // Light pink
-    "#B0E0E6", // Powder blue
-    "#FADADD", // Pale pink
-    "#E6E6FA", // Lavender
-    "#FFE4B5", // Moccasin
-    "#E0FFFF", // Light cyan
-  ];
 
-  const groupByMonthExpenses = () => {
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const monthExpenses = {};
-    let totalExpense = 0;
+  if (loading || !data) {
+    return (
+      <div className="page-card ">
+        <div className="page-header">
+          <h1 className="page-title">Dashboard</h1>
+        </div>
+        <div className="page-body">
+          <DashboardSkeleton />
+        </div>
+      </div>
+    );
+  }
 
-    const actual = new Date();
-    const now = new Date(actual.getFullYear(), actual.getMonth(), 1);
+  const { stats, charts } = data;
+  const monthLabels = Object.keys(charts.monthly);
+  const currentMonthName = MONTH_NAMES[new Date().getMonth()];
 
-    const aYearAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-    const monthExpense = {
-      [monthNames[now.getMonth()]]: 0,
-    };
-
-    const monthsInRange = [];
-
-    for (let i = 11; i >= 1; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-      monthsInRange.push(key);
-      monthExpenses[key] = 0;
-    }
-
-    allExpenses.forEach((expense) => {
-      const expenseDate = new Date(expense.date);
-
-      if (expenseDate >= aYearAgo && expenseDate <= now) {
-        const key = `${
-          monthNames[expenseDate.getMonth()]
-        } ${expenseDate.getFullYear()}`;
-
-        if (monthExpenses.hasOwnProperty(key)) {
-          monthExpenses[key] += expense.cost;
-          totalExpense += expense.cost;
-        }
-      }
-      if (
-        expenseDate.getFullYear() === now.getFullYear() &&
-        expenseDate.getMonth() === now.getMonth()
-      ) {
-        monthExpense[monthNames[now.getMonth()]] += expense.cost;
-      }
-    });
-
-    return {
-      monthName: monthNames[now.getMonth()],
-      monthExpense: monthExpense,
-      monthExpenses: monthExpenses,
-      totalExpense: totalExpense,
-    };
-  };
-
-  const { monthName, monthExpense, monthExpenses, totalExpense } =
-    groupByMonthExpenses();
-
-  const groupByMonthOrders = () => {
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const monthCounts = {};
-    const monthRevenue = {};
-    const orderStatus = {};
-    let totalRevenue = 0;
-
-    const actual = new Date();
-    const now = new Date(actual.getFullYear(), actual.getMonth(), 1);
-
-    const aYearAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-
-    const monthsInRange = [];
-
-    for (let i = 11; i >= 1; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
-      monthsInRange.push(key);
-      monthCounts[key] = 0;
-      monthRevenue[key] = 0;
-    }
-
-    allOrders.forEach((order) => {
-      const orderDate = new Date(order.orderDate);
-
-      if (orderDate >= aYearAgo && orderDate <= now) {
-        console.log(order);
-        const key = `${
-          monthNames[orderDate.getMonth()]
-        } ${orderDate.getFullYear()}`;
-
-        if (monthCounts.hasOwnProperty(key)) {
-          monthCounts[key]++;
-          monthRevenue[key] += order.totalAmount;
-          totalRevenue += order.totalAmount;
-        }
-      }
-
-      if (!orderStatus[order.status]) {
-        orderStatus[order.status] = 1;
-      } else if (orderStatus[order.status]) {
-        orderStatus[order.status] += 1;
-      }
-    });
-
-    return {
-      orderStatus: orderStatus,
-      monthCounts: monthCounts,
-      monthRevenue: monthRevenue,
-      totalRevenue: totalRevenue,
-    };
-  };
-
-  const { orderStatus, monthCounts, monthRevenue, totalRevenue } =
-    groupByMonthOrders();
-  console.log("status" + JSON.stringify(orderStatus));
-  const ordersThisMonth = () => {
-    let runningCount = 0;
-    let runningTotal = 0;
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const monthCounts = {};
-
-    const actual = new Date();
-    const monthStart = new Date(actual.getFullYear(), actual.getMonth(), 1);
-    const monthEnd = new Date(actual.getFullYear(), actual.getMonth() + 1, 0);
-    for (let day = 1; day <= monthEnd.getDate(); day++) {
-      monthCounts["day " + day] = 0;
-    }
-
-    let key = null;
-    allOrders.forEach((order) => {
-      const orderDate = new Date(order.orderDate);
-
-      if (orderDate >= monthStart && orderDate <= monthEnd) {
-        runningTotal += order.totalAmount;
-        const day = orderDate.getDate();
-        if (!monthCounts["day " + day]) {
-          monthCounts["day " + day] = 1;
-          runningCount++;
-        } else {
-          monthCounts["day " + day]++;
-          runningCount++;
-        }
-      }
-    });
-
-    return {
-      month: monthNames[actual.getMonth()],
-      days: monthCounts,
-      runningCount: runningCount,
-      runningTotal: runningTotal,
-    };
-  };
-
-  const ordersMonth = ordersThisMonth();
-
-  const chartData = {
-    labels: Object.keys(monthCounts),
+  const monthlyOrdersData = {
+    labels: monthLabels,
     datasets: [
       {
         label: "Orders Per Month",
-        data: Object.values(monthCounts),
-        backgroundColor: barColors,
-        borderColor: barColors,
+        data: monthLabels.map((k) => charts.monthly[k].orders),
+        backgroundColor: BAR_COLORS,
+        borderRadius: 4,
       },
     ],
   };
-  const monthData = {
-    labels: Object.keys(ordersMonth.days),
+  const dailyData = {
+    labels: Object.keys(charts.daily),
     datasets: [
       {
         label: "Orders Per Day",
-        data: Object.values(ordersMonth.days),
-        backgroundColor: barColors,
-        borderColor: barColors,
+        data: Object.values(charts.daily),
+        backgroundColor: BAR_COLORS,
+        borderRadius: 4,
       },
     ],
   };
-
   const revenueChartData = {
-    labels: Object.keys(monthRevenue),
+    labels: monthLabels,
     datasets: [
       {
         label: "Revenue Per Month",
-        data: Object.values(monthRevenue),
-        fill: false,
-        borderColor: "#4bc0c0",
-        backgroundColor: "#4bc0c0",
-        tension: 0.3,
+        data: monthLabels.map((k) => charts.monthly[k].revenue),
+        fill: true,
+        borderColor: "#8b2252",
+        backgroundColor: "rgba(139,34,82,0.06)",
+        tension: 0.4,
+        pointBackgroundColor: "#8b2252",
+        pointRadius: 4,
       },
     ],
   };
   const expenseChartData = {
-    labels: Object.keys(monthExpenses),
+    labels: monthLabels,
     datasets: [
       {
         label: "Expenses Per Month",
-        data: Object.values(monthExpenses),
+        data: monthLabels.map((k) => charts.monthly[k].expenses),
         fill: true,
-        borderColor: "#4bc0c0",
-        backgroundColor: "#4bc0c0",
-        tension: 0.3,
+        borderColor: "#c9976b",
+        backgroundColor: "rgba(201,151,107,0.06)",
+        tension: 0.4,
+        pointBackgroundColor: "#c9976b",
+        pointRadius: 4,
       },
     ],
   };
-
+  const statusLabels = Object.keys(charts.orderStatus);
   const orderStatusData = {
-    labels: Object.keys(orderStatus),
+    labels: statusLabels,
     datasets: [
       {
-        label: "Order Status",
-        data: Object.values(orderStatus),
+        data: statusLabels.map((k) => charts.orderStatus[k]),
         backgroundColor: [
-          "#FF6384", // red
-          "#36A2EB", // blue
-          "#FFCE56", // yellow
-          "#4BC0C0", // teal
-          "#9966FF", // purple
-          "#FF9F40", // orange
+          "#8b2252",
+          "#c9976b",
+          "#d4856a",
+          "#b89aaa",
+          "#a8325f",
+          "#c4a0c0",
         ],
         hoverOffset: 6,
+        borderWidth: 0,
       },
     ],
   };
-  const doughnutOptions = {
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-  };
-  const chartOptions = {
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          display: false, // This removes the labels from x-axis
-        },
-        grid: {
-          display: false, // Optional: remove grid lines if desired
-        },
-      },
-    },
-  };
 
-  const orderChartOptions = {
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-    scales: {
-      x: {
-        ticks: {
-          display: false, // This removes the labels from x-axis
-        },
-        grid: {
-          display: false, // Optional: remove grid lines if desired
-        },
-      },
-      y: {
-        ticks: {
-          stepSize: 1, // Ensures increments of 1
-          callback: function (value) {
-            if (Number.isInteger(value)) {
-              return value;
-            }
-            return null; // Hides decimal values just in case
-          },
-        },
-      },
-    },
-  };
-  console.log(monthExpense);
   return (
-    <div className="bg-white rounded-lg pb-4 shadow  p-6 flex flex-col gap-4 max-w-7xl">
-      <h2 className="font-bold text-4xl text-pink-900">Dashboard</h2>
-      {loading.loading ? (
-        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          <div className="text-pink-800 font-bold text-xl animate-pulse">
-            Loading {loading.what}...
+    <div className="page-card ">
+      <div className="page-header">
+        <h1 className="page-title">Dashboard</h1>
+      </div>
+
+      <div className="page-body">
+        {/* Stat cards */}
+        <div className="stat-grid">
+          <Card
+            title="Orders this month"
+            data={stats.ordersThisMonth}
+            icon={ShoppingBag}
+          />
+          <Card
+            title="Revenue this month"
+            data={`${Number(stats.revenueThisMonth).toLocaleString()} PKR`}
+            icon={TrendingUp}
+            accent="var(--gold)"
+          />
+          <Card
+            title="Overall revenue"
+            data={`${Number(stats.totalRevenue).toLocaleString()} PKR`}
+            icon={DollarSign}
+            accent="#16a34a"
+          />
+          <Card
+            title="Overall expense"
+            data={`${Number(stats.totalExpense).toLocaleString()} PKR`}
+            icon={CreditCard}
+            accent="#dc2626"
+          />
+          <Card
+            title="Net profit"
+            data={`${Number(stats.netProfit).toLocaleString()} PKR`}
+            icon={Gem}
+            accent={stats.netProfit >= 0 ? "#16a34a" : "#dc2626"}
+          />
+        </div>
+
+        {/* Charts row */}
+        <div className="chart-grid">
+          {/* Orders charts */}
+          <div className="chart-panel">
+            <h2>Orders</h2>
+            <div className="charts-row">
+              <div>
+                <p className="chart-sub-label">{currentMonthName} — daily</p>
+                <div className="chart-wrapper">
+                  <Bar data={dailyData} options={ORDER_CHART_OPTS} />
+                </div>
+              </div>
+              <div>
+                <p className="chart-sub-label">Sales per month</p>
+                <div className="chart-wrapper">
+                  <Bar data={monthlyOrdersData} options={ORDER_CHART_OPTS} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order status doughnut */}
+          <div className="doughnut-panel">
+            <div className="flex flex-col items-center gap-2">
+              <p className="chart-sub-label">Order Status</p>
+              <div
+                style={{
+                  position: "relative",
+                  width: 180,
+                  height: 180,
+                  flexShrink: 0,
+                }}
+              >
+                <Doughnut
+                  data={orderStatusData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: "70%",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="doughnut-legend">
+              {statusLabels.map((label, i) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 text-xs"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{
+                      background:
+                        orderStatusData.datasets[0].backgroundColor[i],
+                    }}
+                  />
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Revenue + Expense charts */}
+          <div className="chart-panel">
+            <h2>Finance</h2>
+            <div className="charts-row">
+              <div>
+                <p className="chart-sub-label">Revenue per month</p>
+                <div className="chart-wrapper">
+                  <Line data={revenueChartData} options={CHART_OPTS} />
+                </div>
+              </div>
+              <div>
+                <p className="chart-sub-label">Expenses per month</p>
+                <div className="chart-wrapper">
+                  <Line data={expenseChartData} options={CHART_OPTS} />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      ) : (
-        <div>
-          <div className="flex gap-4 justify-between">
-            <Card title="Orders this month" data={ordersMonth.runningCount} />
-            <Card title="Revenue this month" data={ordersMonth.runningTotal} />
-            <div className="w-30 flex flex-col items-center gap-0">
-              <Doughnut data={orderStatusData} options={doughnutOptions} />
-              <h1 className="font-semibold">Order Status</h1>
-            </div>
-            <Card title="Overall revenue" data={totalRevenue} />
-            <Card title="Overall expense" data={totalExpense} />
-            {/* <Card title="Expense this month" data={monthExpense[monthName]} /> */}
-          </div>
-
-          <div className="flex  justify-between  border-1 border-stone-200 rounded-xl min-w-full">
-            <div className="flex gap-6 flex-col rounded-2xl p-6">
-              <h1 className="mb-2 font-bold text-2xl">Orders </h1>
-              <div className="w-xl">
-                <div className="">
-                  <p className="mb-2 text-lg font-semibold">
-                    {ordersMonth.month}
-                  </p>
-                  <Bar data={monthData} options={orderChartOptions} />
-                </div>
-                <div className="">
-                  <p className="mb-2 text-lg font-semibold">Sales per Month</p>
-                  <Bar data={chartData} options={orderChartOptions} />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-6 flex-col  rounded-2xl p-6">
-              <h1 className="mb-2 font-bold text-2xl">Profit and Expenses </h1>
-
-              <div className="w-xl">
-                <p className="mb-2 text-lg font-semibold">Revenue per Month</p>
-                <Line data={revenueChartData} options={chartOptions} />
-              </div>
-
-              <div className="w-xl">
-                <p className="mb-2 text-lg font-semibold">Expense per Month</p>
-                <Line data={expenseChartData} options={chartOptions} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

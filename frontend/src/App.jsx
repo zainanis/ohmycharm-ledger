@@ -1,5 +1,6 @@
 import Layout from "./components/Layout";
 import { BrowserRouter, Route, Routes } from "react-router";
+import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/products";
 import Customers from "./pages/Customers";
@@ -16,6 +17,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="login" element={<Login />} />
         <Route element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="products" element={<Products />} />

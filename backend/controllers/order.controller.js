@@ -26,9 +26,9 @@ const createOrder = async (req, res) => {
     if (!(await Customer.findById(customerId)))
       return res.status(404).json("Customer does not exist.");
 
-    if (!products || products.length <= 0) {
+    if (!products || products.length <= 0)
       return res.status(400).json("No products provided for the order.");
-    }
+
     session.startTransaction();
     const [newOrder] = await Order.create(
       [
@@ -49,9 +49,12 @@ const createOrder = async (req, res) => {
     const prodOrderDocs = [];
 
     for (const item of products) {
-      const product = await Product.findById(item._id);
+      const product = await Product.findById(item._id, null, { session });
 
-      if (!product) return res.status(404).json("prodcut does not exists");
+      if (!product) {
+        await session.abortTransaction();
+        return res.status(404).json("product does not exist");
+      }
 
       const [newprodorder] = await ProdOrder.create(
         [
@@ -96,8 +99,42 @@ const createOrder = async (req, res) => {
 
 const getAllOrders = async (req, res) => {
   try {
-    const allOrders = await Order.find().populate("customerId", "name");
-    res.status(200).json(allOrders);
+    const {
+      status, paymentMode, sortBy = "orderDate",
+      from, to, search,
+      page = 1, limit = 20,
+    } = req.query;
+
+    const dateField = ["orderDate", "sentDate", "recieveDate"].includes(sortBy) ? sortBy : "orderDate";
+    const match = {};
+
+    if (status) match.status = status;
+    if (paymentMode) match.paymentMode = paymentMode;
+    if (from || to) {
+      match[dateField] = {};
+      if (from) match[dateField].$gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setHours(23, 59, 59, 999);
+        match[dateField].$lte = toDate;
+      }
+    }
+    if (search) {
+      const customers = await Customer.find({ name: { $regex: search, $options: "i" } }, "_id");
+      match.customerId = { $in: customers.map((c) => c._id) };
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [total, data] = await Promise.all([
+      Order.countDocuments(match),
+      Order.find(match)
+        .populate("customerId", "name")
+        .sort({ [dateField]: 1 })
+        .skip(skip)
+        .limit(Number(limit)),
+    ]);
+
+    res.status(200).json({ data, total, page: Number(page), limit: Number(limit) });
   } catch (error) {
     res.status(500).json(error.message);
   }
@@ -139,15 +176,18 @@ const updateOrderById = async (req, res) => {
 
     let prodOrderDocs = [];
 
-    if (products) {
-      session.startTransaction();
+    session.startTransaction();
 
+    if (products) {
       await ProdOrder.deleteMany({ orderId: id }, { session });
 
       for (const item of products) {
-        const product = await Product.findById(item._id);
+        const product = await Product.findById(item._id, null, { session });
 
-        if (!product) return res.status(404).json("prodcut does not exists");
+        if (!product) {
+          await session.abortTransaction();
+          return res.status(404).json("product does not exist");
+        }
 
         const [newprodorder] = await ProdOrder.create(
           [
@@ -157,43 +197,39 @@ const updateOrderById = async (req, res) => {
               quantity: item.quantity,
             },
           ],
-
           { session }
         );
-        totalAmount = totalAmount - discount;
         totalAmount += newprodorder.totalPrice;
         prodOrderDocs.push(newprodorder);
       }
+      totalAmount = totalAmount - (discount ?? 0);
     }
 
     const updatedOrder = await Order.findByIdAndUpdate(
       id,
-
       {
-        ...(status && { status }),
-        ...(orderDate && { orderDate }),
-        ...(sentDate && { sentDate }),
-        ...(recieveDate && { recieveDate }),
-        ...(paymentMode && { paymentMode }),
-        ...(discount && { discount }),
+        ...(status !== undefined && { status }),
+        ...(orderDate !== undefined && { orderDate }),
+        ...(sentDate !== undefined && { sentDate }),
+        ...(recieveDate !== undefined && { recieveDate }),
+        ...(paymentMode !== undefined && { paymentMode }),
+        ...(discount !== undefined && { discount }),
         ...(products && { totalAmount }),
       },
-
       { new: true, runValidators: true, session }
     );
 
-    await Ledger.findOneAndUpdate(
-      { orderId: id },
-
-      {
-        date: orderDate,
-        type: "Profit",
-        paymentMode: paymentMode,
-        amount: totalAmount,
-      },
-
-      { session, runValidators: true }
-    );
+    if (products) {
+      await Ledger.findOneAndUpdate(
+        { orderId: id },
+        {
+          ...(orderDate !== undefined && { date: orderDate }),
+          ...(paymentMode !== undefined && { paymentMode }),
+          amount: totalAmount,
+        },
+        { session, runValidators: true }
+      );
+    }
 
     await session.commitTransaction();
     res.status(200).json(updatedOrder);
@@ -206,19 +242,28 @@ const updateOrderById = async (req, res) => {
 };
 
 const deleteOrderById = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
     const { id } = req.params;
+    await session.startTransaction();
 
-    const deletedOrder = await Order.findByIdAndDelete(id);
+    const deletedOrder = await Order.findByIdAndDelete(id, { session });
 
-    if (!deletedOrder) return res.status(404).json("Order doesnot exist.");
+    if (!deletedOrder) {
+      await session.abortTransaction();
+      return res.status(404).json("Order doesnot exist.");
+    }
 
-    await ProdOrder.deleteMany({ orderId: id });
+    await ProdOrder.deleteMany({ orderId: id }, { session });
+    await Ledger.deleteOne({ orderId: id }, { session });
 
-    await Ledger.deleteOne({ orderId: id });
+    await session.commitTransaction();
     res.status(200).json("Order deleted");
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json(error.message);
+  } finally {
+    session.endSession();
   }
 };
 module.exports = {

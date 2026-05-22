@@ -1,5 +1,5 @@
 # Node.js dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 
@@ -35,3 +35,4 @@ Thumbs.db
 .npm/
 .eslintcache
 .node_repl_history
+/CLAUDE.md

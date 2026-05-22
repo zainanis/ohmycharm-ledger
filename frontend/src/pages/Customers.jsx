@@ -1,71 +1,78 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { FaPlus } from "react-icons/fa";
+import { useEffect, useRef, useState } from "react";
+import { Plus } from "lucide-react";
 import { NavLink } from "react-router";
 import Paginate from "../components/utils/Paginate.jsx";
-import { setCustomers } from "../state/customerSlice.js";
-
-import { useDispatch, useSelector } from "react-redux";
-
+import Customercard from "../components/Customers/Customercard.jsx";
 import api from "../utils/client.js";
 
-const Customers = () => {
-  const dispatch = useDispatch();
-  const allCustomers = useSelector((state) => state.customers.allCustomers);
+const LIMIT = 12;
 
+const Customers = () => {
+  const [data,        setData]        = useState([]);
+  const [total,       setTotal]       = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState({ loading: false, what: null });
+  const [search,      setSearch]      = useState("");
+  const [loading,     setLoading]     = useState({ loading: false, what: null });
+
+  const searchTimer = useRef(null);
+
+  const fetchCustomers = (overrides = {}) => {
+    const params = {
+      page: currentPage,
+      limit: LIMIT,
+      ...(search.trim() && { search: search.trim() }),
+      ...overrides,
+    };
+    setLoading({ loading: true, what: "Customers" });
+    api.get("/api/customers", { params })
+      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
+      .catch(console.error)
+      .finally(() => setLoading({ loading: false, what: null }));
+  };
 
   useEffect(() => {
-    if (allCustomers.length === 0) {
-      setLoading({ loading: true, what: "Customers" });
-      api
-        .get("/api/customers")
-        .then((res) => {
-          console.log(res);
-          dispatch(setCustomers(res.data));
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => setLoading({ loading: false, what: null }));
-    }
-  }, []);
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchCustomers({ page: 1, search: search.trim() });
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [search]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [currentPage]);
 
   return (
-    <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between  max-w-7xl">
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Customers</h1>
-          <input
-            type="text"
-            className="border-1 border-solid border-stone-200 rounded-lg pr-20 py-2 pl-5"
-            placeholder="Search Customers"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="flex justify-end px-5 gap-5 ">
-          <NavLink
-            className=" flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
-            to="add"
-          >
-            <FaPlus />
-            Add Customer
-          </NavLink>
-        </div>
+    <div className="page-card">
+      <div className="page-header">
+        <h1 className="page-title">Customers</h1>
+        <input
+          type="text"
+          className="form-control search-input"
+          placeholder="Search customers…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
-      <Paginate
-        who="Customer"
-        loading={loading}
-        allProducts={allCustomers}
-        currentPage={currentPage}
-        search={search}
-        setCurrentPage={setCurrentPage}
-      />
+      <div className="page-body">
+        <div className="flex justify-end">
+          <NavLink className="btn btn-success" to="add">
+            <Plus size={16} /> Add Customer
+          </NavLink>
+        </div>
+
+        <Paginate
+          items={data}
+          renderItem={(customer) => <Customercard key={customer._id} {...customer} />}
+          loading={loading}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          total={total}
+          itemsPerPage={LIMIT}
+        />
+      </div>
     </div>
   );
 };

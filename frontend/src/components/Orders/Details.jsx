@@ -26,7 +26,6 @@ const Details = () => {
         setProducts(orderRes.data.products);
 
         const customerId = order.customerId;
-        console.log("Order Data:", orderRes.data);
 
         const temp = await api
           .get(`/api/customers/${customerId}`)
@@ -217,12 +216,12 @@ const Details = () => {
             </tbody>
           </table>
         </div>
-        {/* <button
-        className=" bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
-        onClick={handleDownloadPDF}
-      >
-        Print
-      </button> */}
+        <button
+          className="mt-4 bg-pink-800 text-white px-6 py-2 rounded-lg hover:bg-pink-900"
+          onClick={handleDownloadPDF}
+        >
+          Download PDF
+        </button>
       </div>
     </div>
   );

@@ -1,200 +1,218 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { NavLink, useNavigate } from "react-router";
-import { FaChevronCircleLeft } from "react-icons/fa";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addExpense,
-  setExpenses,
-  updateExpense,
-} from "../../state/expenseSlice";
+import { ArrowLeft, FileText, DollarSign, Calendar, AlignLeft, Tag, CreditCard, Loader2 } from "lucide-react";
+import { addExpense, setExpenses, updateExpense } from "../../state/expenseSlice";
 import api from "../../utils/client.js";
 
 const Createexpense = () => {
   const { id } = useParams();
-  const [loading, setLoading] = useState({ loading: false, what: null });
-
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [cost, setCost] = useState("");
-  const [description, setDescription] = useState("");
-  const [expenseType, setExpensetype] = useState("");
-  const [paymentMode, setPaymentmode] = useState("");
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const allExpenses = useSelector((state) => state.expenses.allExpenses);
 
+  const [submitting,   setSubmitting]   = useState(false);
+  const [name,         setName]         = useState("");
+  const [date,         setDate]         = useState("");
+  const [cost,         setCost]         = useState("");
+  const [description,  setDescription]  = useState("");
+  const [expenseType,  setExpenseType]  = useState("");
+  const [paymentMode,  setPaymentMode]  = useState("");
+
   useEffect(() => {
-    if (id) {
-      if (allExpenses.length == 0) {
-        setLoading({ loading: true, what: "Loading Expense..." });
-        api
-          .get("/api/expenses")
-          .then((res) => {
-            dispatch(setExpenses(res.data));
-            console.log(res.data);
-          })
-          .catch((err) => {
-            console.log(err);
-          })
-          .finally(() => setLoading({ loading: false, what: null }));
-      }
-      const expense = allExpenses.find((expense) => expense._id === id);
-      if (expense) {
-        setName(expense.name);
-        setDate(expense.date.slice(0, 10));
-        setCost(expense.cost);
-        setDescription(expense.description);
-        setExpensetype(expense.type);
-        setPaymentmode(expense.paymentMode);
-      }
+    if (!id) return;
+    if (allExpenses.length === 0) {
+      api.get("/api/expenses").then((res) => dispatch(setExpenses(res.data))).catch(console.error);
+    }
+    const expense = allExpenses.find((e) => e._id === id);
+    if (expense) {
+      setName(expense.name || "");
+      setDate(expense.date?.slice(0, 10) || "");
+      setCost(expense.cost || "");
+      setDescription(expense.description || "");
+      setExpenseType(expense.type || "");
+      setPaymentMode(expense.paymentMode || "");
     }
   }, [id, allExpenses]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const expense = {
-      name,
-      cost: parseFloat(cost),
-      date,
-      description,
-      type: expenseType,
-      paymentMode,
-    };
-    console.log(expense);
-
-    const request = id
-      ? api.put(`/api/expenses/${id}`, expense)
-      : api.post("/api/expenses", expense);
-    setLoading({ loading: true, what: "Submitting Expense..." });
+    const payload = { name, cost: parseFloat(cost), date, description, type: expenseType, paymentMode };
+    const request = id ? api.put(`/api/expenses/${id}`, payload) : api.post("/api/expenses", payload);
+    setSubmitting(true);
     request
       .then((res) => {
-        if (id) {
-          console.log("Expense Updated Successfully.");
-          dispatch(updateExpense(res.data));
-        } else {
-          console.log("Expense Created Successfully.");
-          dispatch(addExpense(res.data));
-        }
-
+        dispatch(id ? updateExpense(res.data) : addExpense(res.data));
         navigate("/expenses", { replace: true });
       })
-      .catch((error) => {
-        console.log(error.response);
-      })
-      .finally(() => {
-        setLoading({ loading: false, what: null });
-      });
+      .catch(console.error)
+      .finally(() => setSubmitting(false));
   };
 
+  const EXPENSE_TYPES = [
+    { value: "Advertisement",  label: "Advertisement",  color: "#7c3aed" },
+    { value: "Goods Purchase", label: "Goods Purchase", color: "#0369a1" },
+  ];
+
+  const PAYMENT_MODES = [
+    { value: "Cash",   label: "Cash",   color: "#16a34a" },
+    { value: "Online", label: "Online", color: "#0369a1" },
+  ];
+
   return (
-    <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
-      {loading.loading && (
-        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          <div className="text-pink-800 font-bold text-xl animate-pulse">
-            {loading.what}
-          </div>
-        </div>
-      )}
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Add Expense</h1>
-        </div>
-        <div className="pl-5">
-          <NavLink to="/expenses">
-            <FaChevronCircleLeft size={25} className=" text-pink-900 " />
-          </NavLink>
+    <div className="page-card">
+      <div className="page-header">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: "8px 10px" }}
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <h1 className="page-title">{id ? "Edit" : "Add"} Expense</h1>
         </div>
       </div>
-      <div className=" flex flex-col items-center justify-center  min-h-[75vh]">
-        <form
-          className=" flex flex-col gap-2 justify-between min-h-100 w-100"
-          onSubmit={handleSubmit}
-        >
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Name">Name:</label>
-            <input
-              required
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Price">Cost:</label>
-            <input
-              required
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="number"
-              value={cost}
-              onChange={(e) => setCost(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Expense Date:</label>
-            <input
-              required
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
 
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Description :</label>
-            <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="expensetype">Expense Type :</label>
+      <div className="page-body">
+        <div className="max-w-2xl w-full mx-auto form-card">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* Name + Cost */}
+            <div className="form-grid-2">
+              <Field label="Expense Name" icon={<FileText size={15} />} required>
+                <input
+                  className="form-control"
+                  type="text"
+                  placeholder="e.g. Facebook Ads"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </Field>
 
-            <select
-              required
-              value={expenseType}
-              onChange={(e) => setExpensetype(e.target.value)}
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-            >
-              <option value="All">Select an expense type</option>
-              <option value="Advertisement">Advertisement</option>
-              <option value="Goods Purchase">Goods Purchase</option>
-            </select>
-          </div>
+              <Field label="Cost (PKR)" icon={<DollarSign size={15} />} required>
+                <input
+                  className="form-control"
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 5000"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  required
+                />
+              </Field>
+            </div>
 
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="expensetype">Payment Mode :</label>
+            {/* Date + Description */}
+            <div className="form-grid-2">
+              <Field label="Date" icon={<Calendar size={15} />} required>
+                <input
+                  className="form-control"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  required
+                />
+              </Field>
 
-            <select
-              required
-              value={paymentMode}
-              onChange={(e) => setPaymentmode(e.target.value)}
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-            >
-              <option value="All">Select an payment mode</option>
-              <option value="Cash">Cash</option>
-              <option value="Online">Online</option>
-            </select>
-          </div>
+              <Field label="Description" icon={<AlignLeft size={15} />}>
+                <input
+                  className="form-control"
+                  type="text"
+                  placeholder="Optional notes…"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </Field>
+            </div>
 
-          <div className="flex justify-center">
-            <button
-              className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
-              type="submit"
-            >
-              {id ? "Update Expense" : "Create Expense"}
-            </button>
-          </div>
-        </form>
+            {/* Expense Type */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                <span style={{ color: "var(--text-muted)" }}><Tag size={15} /></span>
+                Expense Type <span style={{ color: "var(--rose-deep)" }}>*</span>
+              </label>
+              <div className="flex gap-3 flex-wrap">
+                {EXPENSE_TYPES.map((opt) => (
+                  <RadioCard
+                    key={opt.value}
+                    opt={opt}
+                    selected={expenseType === opt.value}
+                    onSelect={() => setExpenseType(opt.value)}
+                    name="expenseType"
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Mode */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+                <span style={{ color: "var(--text-muted)" }}><CreditCard size={15} /></span>
+                Payment Mode <span style={{ color: "var(--rose-deep)" }}>*</span>
+              </label>
+              <div className="flex gap-3 flex-wrap">
+                {PAYMENT_MODES.map((opt) => (
+                  <RadioCard
+                    key={opt.value}
+                    opt={opt}
+                    selected={paymentMode === opt.value}
+                    onSelect={() => setPaymentMode(opt.value)}
+                    name="paymentMode"
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                className="btn btn-outline flex-1 justify-center"
+                onClick={() => navigate(-1)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary flex-1 justify-center"
+                disabled={submitting}
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                {submitting ? "Saving…" : id ? "Update Expense" : "Create Expense"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
+
+const Field = ({ label, icon, required, children }) => (
+  <div className="flex flex-col gap-1.5">
+    <label className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+      {icon && <span style={{ color: "var(--text-muted)" }}>{icon}</span>}
+      {label}
+      {required && <span style={{ color: "var(--rose-deep)" }}>*</span>}
+    </label>
+    {children}
+  </div>
+);
+
+const RadioCard = ({ opt, selected, onSelect, name }) => (
+  <label
+    className="flex items-center gap-2 flex-1 cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition-all"
+    style={{
+      border: `1.5px solid ${selected ? opt.color : "var(--border)"}`,
+      background: selected ? `${opt.color}12` : "white",
+      color: selected ? opt.color : "var(--text-muted)",
+    }}
+  >
+    <input type="radio" name={name} value={opt.value} checked={selected} onChange={onSelect} className="sr-only" />
+    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: opt.color }} />
+    {opt.label}
+  </label>
+);
 
 export default Createexpense;

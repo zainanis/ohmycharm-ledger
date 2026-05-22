@@ -1,165 +1,152 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { NavLink, useNavigate } from "react-router";
-import { FaChevronCircleLeft } from "react-icons/fa";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addCustomer,
-  updateCustomer,
-  setCustomers,
-} from "../../state/customerSlice";
+import { ArrowLeft, User, Phone, MapPin, Mail, Loader2 } from "lucide-react";
+import { addCustomer, updateCustomer, setCustomers } from "../../state/customerSlice";
 import api from "../../utils/client.js";
 
 export const Createcustomer = () => {
   const { id } = useParams();
-  const [loading, setLoading] = useState({ loading: false, what: null });
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [phonenumber, setPhonenumber] = useState();
-  const [email, setEmail] = useState("");
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const allCustomers = useSelector((state) => state.customers.allCustomers);
 
-  const allcustomers = useSelector((state) => state.customers.allCustomers);
+  const [submitting, setSubmitting] = useState(false);
+  const [name,        setName]        = useState("");
+  const [phonenumber, setPhonenumber] = useState("");
+  const [address,     setAddress]     = useState("");
+  const [email,       setEmail]       = useState("");
 
   useEffect(() => {
-    if (id) {
-      if (allcustomers.length === 0) {
-        setLoading({ loading: true, what: "Loading Customer..." });
-        api
-          .get("/api/customers")
-          .then((res) => {
-            console.log(res);
-            dispatch(setCustomers(res.data));
-          })
-          .catch((err) => {
-            console.log(err);
-          })
-          .finally(() => setLoading({ loading: false, what: null }));
-      }
-      const customer = allcustomers.find((customer) => customer._id === id);
-
-      if (customer) {
-        setName(customer.name);
-        setAddress(customer.address);
-        setPhonenumber(customer.phoneNumber);
-        setEmail(customer.email);
-      }
+    if (!id) return;
+    if (allCustomers.length === 0) {
+      api.get("/api/customers").then((res) => dispatch(setCustomers(res.data))).catch(console.error);
     }
-  }, [id, allcustomers]);
+    const customer = allCustomers.find((c) => c._id === id);
+    if (customer) {
+      setName(customer.name || "");
+      setAddress(customer.address || "");
+      setPhonenumber(customer.phoneNumber || "");
+      setEmail(customer.email || "");
+    }
+  }, [id, allCustomers]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const customer = {
-      name,
-      phoneNumber: parseFloat(phonenumber),
-      address,
-      email,
-    };
-    const request = id
-      ? api.put(`/api/customers/${id}`, customer)
-      : api.post("/api/customers", customer);
-    setLoading({ loading: true, what: "Submitting Customer..." });
+    const payload = { name, phoneNumber: parseFloat(phonenumber), address, email };
+    const request = id ? api.put(`/api/customers/${id}`, payload) : api.post("/api/customers", payload);
+    setSubmitting(true);
     request
       .then((res) => {
-        if (id) {
-          console.log("Customer Updated Successfully.");
-          dispatch(updateCustomer(res.data));
-        } else {
-          console.log("Product Created Successfully.");
-          dispatch(addCustomer(res.data));
-        }
+        dispatch(id ? updateCustomer(res.data) : addCustomer(res.data));
         navigate("/customers", { replace: true });
       })
-      .catch((error) => {
-        console.log(error.response);
-      })
-      .finally(() => {
-        setLoading({ loading: false, what: null });
-      });
+      .catch(console.error)
+      .finally(() => setSubmitting(false));
   };
 
   return (
-    <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
-      {loading.loading && (
-        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          <div className="text-pink-800 font-bold text-xl animate-pulse">
-            {loading.what}
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">
-            {id ? "Update" : "Add"} Customer
-          </h1>
-        </div>
-        <div className="pl-5">
-          <NavLink to="/customers">
-            <FaChevronCircleLeft size={25} className=" text-pink-900 " />
-          </NavLink>
+    <div className="page-card">
+      <div className="page-header">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: "8px 10px" }}
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <h1 className="page-title">{id ? "Edit" : "Add"} Customer</h1>
         </div>
       </div>
-      <div className=" flex flex-col items-center justify-center  min-h-[75vh]">
-        <form
-          className=" flex flex-col justify-between min-h-100 w-100"
-          onSubmit={handleSubmit}
-        >
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Name">Name:</label>
-            <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Price">Phone Number:</label>
-            <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="number"
-              required
-              value={phonenumber}
-              onChange={(e) => setPhonenumber(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Address:</label>
-            <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              required
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
-          </div>
 
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Email:</label>
-            <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+      <div className="page-body">
+        <div className="max-w-lg w-full mx-auto form-card">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* Name */}
+            <Field label="Full Name" icon={<User size={15} />} required>
+              <input
+                className="form-control"
+                type="text"
+                placeholder="e.g. Aisha Khan"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </Field>
 
-          <div className="flex justify-center">
-            <button
-              className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
-              type="submit"
-            >
-              {id ? "Update" : "Create"} Customer
-            </button>
-          </div>
-        </form>
+            {/* Phone */}
+            <Field label="Phone Number" icon={<Phone size={15} />} required>
+              <input
+                className="form-control"
+                type="number"
+                placeholder="e.g. 03001234567"
+                value={phonenumber}
+                onChange={(e) => setPhonenumber(e.target.value)}
+                required
+              />
+            </Field>
+
+            {/* Address */}
+            <Field label="Address" icon={<MapPin size={15} />} required>
+              <input
+                className="form-control"
+                type="text"
+                placeholder="e.g. House 5, Street 3, Lahore"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+              />
+            </Field>
+
+            {/* Email */}
+            <Field label="Email" icon={<Mail size={15} />}>
+              <input
+                className="form-control"
+                type="email"
+                placeholder="e.g. aisha@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </Field>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                className="btn btn-outline flex-1 justify-center"
+                onClick={() => navigate(-1)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary flex-1 justify-center"
+                disabled={submitting}
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                {submitting ? "Saving…" : id ? "Update Customer" : "Create Customer"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
+
+const Field = ({ label, icon, required, children }) => (
+  <div className="flex flex-col gap-1.5">
+    <label
+      className="text-sm font-medium flex items-center gap-1.5"
+      style={{ color: "var(--text-primary)" }}
+    >
+      {icon && <span style={{ color: "var(--text-muted)" }}>{icon}</span>}
+      {label}
+      {required && <span style={{ color: "var(--rose-deep)" }}>*</span>}
+    </label>
+    {children}
+  </div>
+);
 
 export default Createcustomer;

@@ -1,111 +1,90 @@
-import React, { useMemo, useState } from "react";
-import ProductCard from "../Products/ProductCard";
-import Customercard from "../Customers/Customercard";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const Paginate = ({
-  who,
-  allProducts,
-  selectedStatus,
+  items = [],
+  renderItem,
   currentPage,
   setCurrentPage,
   loading,
-  search,
+  total = 0,
+  itemsPerPage = 12,
 }) => {
-  const itemsPerPage = 8;
-
-  const searchedProducts = useMemo(() => {
-    if (search == "" || search == undefined) {
-      return allProducts;
-    }
-
-    return allProducts.filter((product) =>
-      product.name?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [search, allProducts]);
-
-  const filteredProducts = useMemo(() => {
-    if (selectedStatus === "All" || selectedStatus == undefined)
-      return searchedProducts;
-    return searchedProducts.filter(
-      (product) => product.status === selectedStatus
-    );
-  }, [selectedStatus, searchedProducts]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedStatus, search, setCurrentPage]);
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const totalPages = Math.ceil(total / itemsPerPage);
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
+  if (loading.loading) {
+    return (
+      <div
+        className="grid gap-5 paginate-grid"
+        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+      >
+        {Array.from({ length: itemsPerPage }).map((_, i) => (
+          <div
+            key={i}
+            className="skeleton rounded-2xl"
+            style={{ height: 280, opacity: 1 - i * 0.1 }}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <>
-      {loading.loading ? (
-        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          <div className="text-pink-800 font-bold text-xl animate-pulse">
-            Loading {loading.what}...
+    <div className="flex flex-col gap-6">
+      <div
+        className="grid gap-5 paginate-grid"
+        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}
+      >
+        {items.map((item) => renderItem(item))}
+
+        {items.length === 0 && (
+          <div
+            className="col-span-full flex flex-col items-center justify-center py-20"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <span className="text-5xl mb-3">🌸</span>
+            <span className="text-sm">Nothing here yet</span>
           </div>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap justify-center gap-5 min-h-190">
-            {who === "Customer"
-              ? currentItems.map((customer) => (
-                  <Customercard key={customer.id} {...customer} />
-                ))
-              : who === "Product"
-              ? currentItems.map((product) => (
-                  <ProductCard key={product.id} {...product} />
-                ))
-              : ""}
-          </div>
+        )}
+      </div>
 
-          {filteredProducts.length > itemsPerPage && (
-            <div className="flex justify-center items-center gap-3 flex-wrap">
-              {/* Previous Button */}
-              <button
-                onClick={() => setCurrentPage((prev) => prev - 1)}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Previous
-              </button>
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2">
+          <button
+            onClick={() => setCurrentPage((p) => p - 1)}
+            disabled={currentPage === 1}
+            className="btn btn-outline"
+            style={{ padding: "6px 12px", opacity: currentPage === 1 ? 0.4 : 1 }}
+          >
+            <ChevronLeft size={16} />
+          </button>
 
-              {/* Page Number Buttons */}
-              {pageNumbers.map((number) => (
-                <button
-                  key={number}
-                  onClick={() => setCurrentPage(number)}
-                  className={`px-4 py-2 rounded ${
-                    currentPage === number
-                      ? "bg-pink-900 text-white"
-                      : "bg-gray-100"
-                  }`}
-                >
-                  {number}
-                </button>
-              ))}
+          {pageNumbers.map((n) => (
+            <button
+              key={n}
+              onClick={() => setCurrentPage(n)}
+              className="btn"
+              style={
+                currentPage === n
+                  ? { background: "var(--rose-deep)", color: "white", padding: "6px 13px" }
+                  : { background: "var(--rose-light)", color: "var(--rose-deep)", padding: "6px 13px" }
+              }
+            >
+              {n}
+            </button>
+          ))}
 
-              {/* Next Button */}
-              <button
-                onClick={() => setCurrentPage((prev) => prev + 1)}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <button
+            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage === totalPages}
+            className="btn btn-outline"
+            style={{ padding: "6px 12px", opacity: currentPage === totalPages ? 0.4 : 1 }}
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

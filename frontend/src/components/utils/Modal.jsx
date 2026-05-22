@@ -1,8 +1,6 @@
 import React from "react";
-import { MdCancel } from "react-icons/md";
-import axios from "axios";
+import { X } from "lucide-react";
 import api from "../../utils/client";
-
 import { useDispatch } from "react-redux";
 import { deleteCustomer } from "../../state/customerSlice";
 import { deleteExpense } from "../../state/expenseSlice";
@@ -11,58 +9,70 @@ import { deleteProduct } from "../../state/productsSlice";
 
 const Modal = ({ onClose, name, id, who }) => {
   const dispatch = useDispatch();
+
   const doDelete = () => {
-    api
-      .delete(`/api/${who}/${id}`)
-      .then(() => {
-        switch (who) {
-          case "expenses":
-            dispatch(deleteExpense({ _id: id }));
-            break;
-          case "customers":
-            dispatch(deleteCustomer({ _id: id }));
-            break;
-          case "orders":
-            dispatch(deleteOrder({ _id: id }));
-            break;
-          case "products":
-            dispatch(deleteProduct({ _id: id }));
-            break;
-
-          default:
-            break;
-        }
-
-        onClose();
-      })
-      .catch((err) => {
-        console.log(err.message);
-      });
+    api.delete(`/api/${who}/${id}`).then(() => {
+      const actions = {
+        expenses:  () => dispatch(deleteExpense({ _id: id })),
+        customers: () => dispatch(deleteCustomer({ _id: id })),
+        orders:    () => dispatch(deleteOrder({ _id: id })),
+        products:  () => dispatch(deleteProduct({ _id: id })),
+      };
+      actions[who]?.();
+      onClose();
+    }).catch((err) => console.error(err.message));
   };
+
   return (
     <div
-      className="fixed inset-0 z-10 flex justify-center items-center"
+      className="fixed inset-0 z-50 flex justify-center items-center backdrop-enter"
       onClick={onClose}
+      style={{ background: "rgba(22, 12, 17, 0.55)", backdropFilter: "blur(4px)" }}
     >
-      <div className="absolute inset-0 bg-black opacity-30 backdrop-blur-sm z-0"></div>
-
-      <div className="relative z-10 mt-10 flex flex-col gap-5 text-white">
-        <button className="place-self-end" onClick={onClose}>
-          <MdCancel size={32} />
-        </button>
-        <div
-          className="bg-stone-100 border-1 border-pink-900 rounded-xl px-20 py-10 flex flex-col gap-5 items-center mx-4"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
+      <div
+        className="relative modal-enter bg-white rounded-2xl px-10 py-8 flex flex-col gap-6 items-center mx-4 w-full max-w-sm"
+        style={{ boxShadow: "var(--shadow-lg)", border: "1px solid var(--border)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="absolute top-4 right-4 rounded-lg p-1.5 transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onClick={onClose}
+          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--rose-light)")}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "")}
         >
-          <h1 className="text-pink-900">
-            Are you sure you want to delete{" "}
-            <span className=" font-bold">{name}</span> ?
-          </h1>
+          <X size={18} />
+        </button>
+
+        <div
+          className="w-14 h-14 rounded-full flex items-center justify-center"
+          style={{ background: "#fff5f5" }}
+        >
+          <span style={{ fontSize: "1.6rem" }}>🗑️</span>
+        </div>
+
+        <div className="text-center">
+          <h2
+            className="text-2xl font-semibold mb-1"
+            style={{ fontFamily: "'Cormorant Garamond', serif", color: "var(--text-primary)" }}
+          >
+            Delete {who.slice(0, -1)}?
+          </h2>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            <span className="font-medium" style={{ color: "var(--text-primary)" }}>{name}</span>{" "}
+            will be permanently removed. This cannot be undone.
+          </p>
+        </div>
+
+        <div className="flex gap-3 w-full">
           <button
-            className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
-            type="submit"
+            className="btn btn-outline flex-1 justify-center"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-danger flex-1 justify-center"
             onClick={doDelete}
           >
             Delete

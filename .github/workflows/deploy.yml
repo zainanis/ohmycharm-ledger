@@ -1,0 +1,19 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull latest code
+        working-directory: /opt/ohmycharm-ledger
+        run: git pull origin prod
+
+      - name: Rebuild and restart containers
+        working-directory: /opt/ohmycharm-ledger
+        run: docker-compose -p ohmycharm up --build -d

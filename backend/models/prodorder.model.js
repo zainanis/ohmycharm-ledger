@@ -26,7 +26,8 @@ const prodOrderSchema = new mongoose.Schema(
 
 prodOrderSchema.pre("save", async function (next) {
   try {
-    const product = await Product.findById(this.productId);
+    const options = this.$session() ? { session: this.$session() } : {};
+    const product = await Product.findById(this.productId, null, options);
     if (!product) return next(new Error("Product not found"));
 
     this.totalPrice = product.price * this.quantity;

@@ -31,6 +31,15 @@ const ledgerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+ledgerSchema.pre("validate", function (next) {
+  const hasOrder = !!this.orderId;
+  const hasExpense = !!this.expenseId;
+  if (hasOrder === hasExpense) {
+    return next(new Error("A ledger entry must have exactly one of orderId or expenseId"));
+  }
+  next();
+});
+
 const Ledger = mongoose.model("Ledger", ledgerSchema);
 
 module.exports = Ledger;

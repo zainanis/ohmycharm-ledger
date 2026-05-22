@@ -1,186 +1,167 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../utils/client.js";
-import { FaPlus } from "react-icons/fa";
+import { Plus, X } from "lucide-react";
 import { NavLink } from "react-router";
 import Mytable from "../components/utils/Mytable.jsx";
 
-import { useDispatch, useSelector } from "react-redux";
-import { setOrders } from "../state/orderSlice.js";
+const LIMIT = 20;
 
 const Orders = () => {
-  const dispatch = useDispatch();
-  const allOrders = useSelector((state) => state.orders.allOrders);
+  const [data,      setData]      = useState([]);
+  const [total,     setTotal]     = useState(0);
+  const [page,      setPage]      = useState(1);
+  const [filter,    setFilter]    = useState("All");
+  const [filterBy,  setFilterBy]  = useState("status");
+  const [orderBy,   setOrderBy]   = useState("orderDate");
+  const [loading,   setLoading]   = useState({ loading: false, what: null });
+  const [from,      setFrom]      = useState("");
+  const [to,        setTo]        = useState("");
+  const [search,    setSearch]    = useState("");
+  const [dateError, setDateError] = useState("");
 
-  const [filter, setFilter] = useState("All");
-  const [filterBy, setFilterby] = useState("status");
-  const [orderBy, setOrderby] = useState("orderDate");
-  const [loading, setLoading] = useState({ loading: false, what: null });
+  const searchTimer = useRef(null);
 
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const fetchOrders = (overrides = {}) => {
+    const params = {
+      sortBy: orderBy,
+      page,
+      limit: LIMIT,
+      ...(filter !== "All" && { [filterBy]: filter }),
+      ...(from && { from }),
+      ...(to && { to }),
+      ...(search.trim() && { search: search.trim() }),
+      ...overrides,
+    };
+    setLoading({ loading: true, what: "Orders" });
+    api.get("/api/orders", { params })
+      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
+      .catch(console.error)
+      .finally(() => setLoading({ loading: false, what: null }));
+  };
 
-  const [search, setSearch] = useState("");
-
+  // Refetch when non-search filters change
   useEffect(() => {
-    if (allOrders.length === 0) {
-      setLoading({ loading: true, what: "Orders" });
-      api
-        .get("/api/orders")
-        .then((res) => {
-          dispatch(setOrders(res.data));
-          console.log(res.data);
-        })
-        .catch((err) => {
-          console.log(err);
-        })
-        .finally(() => {
-          setLoading({ loading: false, what: null });
-        });
-    }
-  }, []);
+    setPage(1);
+    fetchOrders({ page: 1 });
+  }, [filter, filterBy, orderBy, from, to]);
+
+  // Debounce search
+  useEffect(() => {
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setPage(1);
+      fetchOrders({ page: 1, search: search.trim() });
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [search]);
+
+  // Refetch when page changes
+  useEffect(() => {
+    fetchOrders();
+  }, [page]);
+
+  const handleFrom = (val) => {
+    if (to && new Date(val) > new Date(to)) { setDateError("'From' date cannot be later than 'To' date."); return; }
+    setDateError(""); setFrom(val);
+  };
+  const handleTo = (val) => {
+    if (from && new Date(val) < new Date(from)) { setDateError("'To' date cannot be earlier than 'From' date."); return; }
+    setDateError(""); setTo(val);
+  };
+  const clearDates = () => { setFrom(""); setTo(""); setDateError(""); };
 
   return (
-    <div className=" bg-white rounded-lg shadow flex gap-2 p-2  flex-col justify-between max-w-7xl  ">
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">Orders</h1>
-        </div>
+    <div className="page-card">
+      <div className="page-header">
+        <h1 className="page-title">Orders</h1>
+        <input
+          className="form-control search-input"
+          type="text"
+          placeholder="Search by customer name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
 
-        <div className="flex justify-between px-5 gap-5 h-15 ">
-          <div className="flex gap-5 items-end">
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">Order By :</h2>
-                <select
-                  value={orderBy}
-                  onChange={(e) => setOrderby(e.target.value)}
-                  className="border px-4 py-2 h-10 w-45  rounded border-stone-200 text-stone-500"
-                >
-                  <option value="orderDate">Order Date</option>
-                  <option value="sentDate">Sent Date</option>
-                  <option value="recieveDate">Recieve Date</option>
-                </select>
-              </div>
+      <div className="page-body">
+        <div className="flex flex-wrap gap-4 items-end justify-between">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Order By</label>
+              <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)} className="form-control">
+                <option value="orderDate">Order Date</option>
+                <option value="sentDate">Sent Date</option>
+                <option value="recieveDate">Receive Date</option>
+              </select>
             </div>
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">From :</h2>
-                <input
-                  value={from}
-                  onChange={(e) => {
-                    const newFromDate = e.target.value;
-                    if (to && new Date(newFromDate) > new Date(to)) {
-                      alert("'From' date cannot be later than the 'To' date.");
-                      return;
-                    }
-                    setFrom(newFromDate);
-                  }}
-                  type="date"
-                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
-                />
-              </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>From</label>
+              <input type="date" value={from} onChange={(e) => handleFrom(e.target.value)} className="form-control" />
             </div>
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">To :</h2>
-                <input
-                  value={to}
-                  onChange={(e) => {
-                    const newToDate = e.target.value;
-                    if (from && new Date(newToDate) < new Date(from)) {
-                      alert(
-                        "The 'To' date cannot be earlier than the 'From' date."
-                      );
-                      return;
-                    }
-                    setTo(newToDate);
-                  }}
-                  min={from}
-                  type="date"
-                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
-                />
-              </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>To</label>
+              <input type="date" value={to} min={from} onChange={(e) => handleTo(e.target.value)} className="form-control" />
             </div>
-
-            <button
-              className=" flex items-center h-10 w-30 justify-center gap-2 px-4 py-2 rounded-2xl bg-red-600 text-white hover:bg-red-700 hover:shadow-lg"
-              onClick={() => {
-                setTo("");
-                setFrom("");
-              }}
-            >
-              Clear Dates
-            </button>
+            {(from || to) && (
+              <button className="btn" style={{ padding: "8px 14px", background: "var(--rose-light)", color: "var(--rose-deep)" }} onClick={clearDates}>
+                <X size={14} /> Clear
+              </button>
+            )}
           </div>
 
-          <div className="flex justify-end items-end px-5 gap-5 h-15 ">
-            <div className="flex gap-5 items-end">
-              <div>
-                <h2 className="font-medium">Filter By:</h2>
-                <select
-                  value={filterBy}
-                  onChange={(e) => {
-                    setFilterby(e.target.value);
-                    setFilter("All");
-                  }}
-                  className="border rounded h-10 px-4 py-2 border-stone-200 text-stone-500"
-                >
-                  <option value="status">Status</option>
-                  <option value="paymentMode">Payment Mode</option>
-                </select>
-              </div>
-
-              <div>
-                <select
-                  value={filter}
-                  onChange={(e) => setFilter(e.target.value)}
-                  className="border px-4 py-2 h-10 w-45  rounded border-stone-200 text-stone-500"
-                >
-                  {filterBy === "status" ? (
-                    <>
-                      <option value="All">All</option>
-                      <option value="Placed">Placed</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Sent">Sent</option>
-                      <option value="Delivered">Delivered</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="All">All</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Online">Online</option>
-                    </>
-                  )}
-                </select>
-              </div>
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Filter By</label>
+              <select value={filterBy} onChange={(e) => { setFilterBy(e.target.value); setFilter("All"); }} className="form-control">
+                <option value="status">Status</option>
+                <option value="paymentMode">Payment Mode</option>
+              </select>
             </div>
-            <NavLink
-              className=" flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700 hover:shadow-lg"
-              to="add"
-            >
-              <FaPlus />
-              Orders
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>&nbsp;</label>
+              <select value={filter} onChange={(e) => setFilter(e.target.value)} className="form-control">
+                {filterBy === "status" ? (
+                  <>
+                    <option value="All">All statuses</option>
+                    <option value="Placed">Placed</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Sent">Sent</option>
+                    <option value="Delivered">Delivered</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="All">All modes</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Online">Online</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <NavLink className="btn btn-success" to="add">
+              <Plus size={16} /> New Order
             </NavLink>
           </div>
         </div>
+
+        {dateError && <p className="text-sm" style={{ color: "#dc2626" }}>{dateError}</p>}
+
         <Mytable
           who="orders"
-          data={allOrders}
+          data={data}
           loading={loading}
           header={[
-            { label: "Customer Name", path: ".customerId.name" },
-            { label: "Status", path: ".status" },
-            { label: "Order Date", path: ".orderDate" },
-            { label: "Sent Date", path: ".sentDate" },
-            { label: "Recieve Date", path: ".recieveDate" },
+            { label: "Customer",     path: ".customerId.name" },
+            { label: "Status",       path: ".status" },
+            { label: "Order Date",   path: ".orderDate" },
+            { label: "Sent Date",    path: ".sentDate" },
+            { label: "Receive Date", path: ".recieveDate" },
             { label: "Payment Mode", path: ".paymentMode" },
-            { label: "Total Amount", path: ".totalAmount" },
+            { label: "Total",        path: ".totalAmount" },
           ]}
-          filterBy={filterBy}
-          filter={filter}
-          orderBy={orderBy}
-          from={from}
-          to={to}
+          total={total}
+          page={page}
+          limit={LIMIT}
+          onPageChange={setPage}
         />
       </div>
     </div>

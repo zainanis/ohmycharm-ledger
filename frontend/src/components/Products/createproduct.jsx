@@ -1,166 +1,187 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/client.js";
-import { NavLink, useNavigate } from "react-router";
-import { FaChevronCircleLeft } from "react-icons/fa";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  addProduct,
-  updateProduct,
-  setProducts,
-} from "../../state/productsSlice";
+import { ArrowLeft, Tag, DollarSign, FileText, ToggleRight, Loader2 } from "lucide-react";
+import { addProduct, updateProduct, setProducts } from "../../state/productsSlice";
 
 export const Createproduct = () => {
   const { id } = useParams();
-  const [loading, setLoading] = useState({ loading: false, what: null });
-
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState("");
-
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const allProducts = useSelector((state) => state.products.allProducts);
 
+  const [submitting,   setSubmitting]   = useState(false);
+  const [name,         setName]         = useState("");
+  const [price,        setPrice]        = useState("");
+  const [description,  setDescription]  = useState("");
+  const [status,       setStatus]       = useState("Available");
+
   useEffect(() => {
-    if (id) {
-      if (allProducts.length === 0) {
-        setLoading({ loading: true, what: "Loading Product..." });
-
-        api
-          .get("/api/products")
-          .then((res) => {
-            dispatch(setProducts(res.data));
-            console.log(res.data);
-          })
-          .catch((err) => {
-            console.log(err);
-          })
-          .finally(() => setLoading({ loading: false, what: null }));
-      }
-      const product = allProducts.find((product) => product._id === id);
-
-      if (product) {
-        setName(product.name || "");
-        setPrice(product.price || 0);
-        setDescription(product.description || "");
-        setStatus(product.status || "Available");
-      }
+    if (!id) return;
+    if (allProducts.length === 0) {
+      api.get("/api/products").then((res) => dispatch(setProducts(res.data))).catch(console.error);
+    }
+    const product = allProducts.find((p) => p._id === id);
+    if (product) {
+      setName(product.name || "");
+      setPrice(product.price || "");
+      setDescription(product.description || "");
+      setStatus(product.status || "Available");
     }
   }, [id, allProducts]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    const newPost = { name, price: parseFloat(price), description, status };
-    console.log(newPost);
-    const request = id
-      ? api.put(`/api/products/${id}`, newPost)
-      : api.post("/api/products", newPost);
-    setLoading({ loading: true, what: "Submitting Products..." });
+    const payload = { name, price: parseFloat(price), description, status };
+    const request = id ? api.put(`/api/products/${id}`, payload) : api.post("/api/products", payload);
+    setSubmitting(true);
     request
       .then((res) => {
-        if (id) {
-          console.log("Product Updated Successfully.");
-          dispatch(updateProduct(res.data));
-        } else {
-          console.log("Product Created Successfully.");
-          dispatch(addProduct(res.data));
-        }
+        dispatch(id ? updateProduct(res.data) : addProduct(res.data));
         navigate("/products", { replace: true });
       })
-      .catch((error) => {
-        console.log(error.response);
-      })
-      .finally(() => {
-        setLoading({ loading: false, what: null });
-      });
+      .catch(console.error)
+      .finally(() => setSubmitting(false));
   };
 
-  return (
-    <div className=" bg-white rounded-lg shadow flex  flex-col  gap-2 p-2 ">
-      {loading.loading && (
-        <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
-          <div className="text-pink-800 font-bold text-xl animate-pulse">
-            {loading.what}
-          </div>
-        </div>
-      )}
+  const STATUS_OPTIONS = [
+    { value: "Available",   label: "Available",    color: "#16a34a" },
+    { value: "Out of Stock",label: "Out of Stock",  color: "#ea580c" },
+    { value: "Discontinued",label: "Discontinued",  color: "#dc2626" },
+  ];
 
-      <div className="flex flex-col gap-5">
-        <div className="border-solid border-b-2 pt-15 px-5 border-stone-200 flex justify-between flex-wrap py-5">
-          <h1 className="font-bold text-4xl text-pink-900">
-            {id ? "Update Product" : "Add Product"}
-          </h1>
-        </div>
-        <div className="pl-5">
-          <NavLink to="/products">
-            <FaChevronCircleLeft size={25} className=" text-pink-900 " />
-          </NavLink>
+  return (
+    <div className="page-card">
+      <div className="page-header">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ padding: "8px 10px" }}
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <h1 className="page-title">{id ? "Edit" : "Add"} Product</h1>
         </div>
       </div>
-      <div className=" flex flex-col items-center justify-center  min-h-[75vh]">
-        <form
-          className=" flex flex-col justify-between min-h-100 w-100"
-          onSubmit={handleSubmit}
-        >
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Name">Name:</label>
-            <input
-              required
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Price">Price:</label>
-            <input
-              required
-              min="1"
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Description">Description:</label>
-            <input
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
 
-          <div className="flex flex-col text-pink-900">
-            <label htmlFor="Status">Status:</label>
-            <select
-              required
-              defaultValue="Available"
-              className="border-1 border-stone-300 rounded-lg px-5 py-2"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <option value="">Select</option>
-              <option value="Available">Available</option>
-              <option value="Out of Stock">Out of Stock</option>
-              <option value="Discontinued">Discontinued</option>
-            </select>
-          </div>
-          <div className="flex justify-center">
-            <button
-              className="rounded-lg w-60 py-3 bg-pink-800 hover:bg-pink-900 hover:shadow-lg text-white"
-              type="submit"
-            >
-              {id ? "Update Product" : "Create Product"}
-            </button>
-          </div>
-        </form>
+      <div className="page-body">
+        <div className="max-w-xl w-full mx-auto form-card">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            {/* Name + Price side by side */}
+            <div className="form-grid-2">
+              <Field label="Product Name" icon={<Tag size={15} />} required>
+                <input
+                  className="form-control"
+                  type="text"
+                  placeholder="e.g. Gold Bracelet"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </Field>
+
+              <Field label="Price (PKR)" icon={<DollarSign size={15} />} required>
+                <input
+                  className="form-control"
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 2500"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  required
+                />
+              </Field>
+            </div>
+
+            {/* Description */}
+            <Field label="Description" icon={<FileText size={15} />}>
+              <textarea
+                className="form-control"
+                rows={3}
+                placeholder="Optional — describe this product…"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{ resize: "vertical" }}
+              />
+            </Field>
+
+            {/* Status as visual radio cards */}
+            <div className="flex flex-col gap-2">
+              <label
+                className="text-sm font-medium flex items-center gap-1.5"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <span style={{ color: "var(--text-muted)" }}><ToggleRight size={15} /></span>
+                Status <span style={{ color: "var(--rose-deep)" }}>*</span>
+              </label>
+              <div className="flex gap-3 flex-wrap">
+                {STATUS_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex items-center gap-2 flex-1 cursor-pointer rounded-xl px-4 py-3 text-sm font-medium transition-all"
+                    style={{
+                      border: `1.5px solid ${status === opt.value ? opt.color : "var(--border)"}`,
+                      background: status === opt.value ? `${opt.color}12` : "white",
+                      color: status === opt.value ? opt.color : "var(--text-muted)",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="status"
+                      value={opt.value}
+                      checked={status === opt.value}
+                      onChange={() => setStatus(opt.value)}
+                      className="sr-only"
+                    />
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: opt.color }}
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                className="btn btn-outline flex-1 justify-center"
+                onClick={() => navigate(-1)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary flex-1 justify-center"
+                disabled={submitting}
+              >
+                {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
+                {submitting ? "Saving…" : id ? "Update Product" : "Create Product"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
+
+const Field = ({ label, icon, required, children }) => (
+  <div className="flex flex-col gap-1.5">
+    <label
+      className="text-sm font-medium flex items-center gap-1.5"
+      style={{ color: "var(--text-primary)" }}
+    >
+      {icon && <span style={{ color: "var(--text-muted)" }}>{icon}</span>}
+      {label}
+      {required && <span style={{ color: "var(--rose-deep)" }}>*</span>}
+    </label>
+    {children}
+  </div>
+);
+
+export default Createproduct;

@@ -8,66 +8,62 @@ import { BsFillFileEarmarkSpreadsheetFill } from "react-icons/bs";
 import { NavLink } from "react-router";
 
 const routes = [
-  {
-    path: "/",
-    title: "Dashboard",
-    Icon: BiSolidDashboard,
-  },
-  {
-    path: "/products",
-    title: "Products",
-    Icon: LuBoxes,
-  },
-  {
-    path: "/customers",
-    title: "Customers",
-    Icon: MdAccountCircle,
-  },
-  {
-    path: "/expenses",
-    title: "Expenses",
-    Icon: AiFillDollarCircle,
-  },
-  {
-    path: "/orders",
-    title: "Orders",
-    Icon: FaShoppingCart,
-  },
-  {
-    path: "/ledger",
-    title: "Ledger",
-    Icon: BsFillFileEarmarkSpreadsheetFill,
-  },
+  { path: "/",         title: "Dashboard", Icon: BiSolidDashboard },
+  { path: "/products", title: "Products",  Icon: LuBoxes },
+  { path: "/customers",title: "Customers", Icon: MdAccountCircle },
+  { path: "/expenses", title: "Expenses",  Icon: AiFillDollarCircle },
+  { path: "/orders",   title: "Orders",    Icon: FaShoppingCart },
+  { path: "/ledger",   title: "Ledger",    Icon: BsFillFileEarmarkSpreadsheetFill },
 ];
 
-const RouteSelect = () => {
+const RouteSelect = ({ onNavClick }) => {
   return (
-    <div className="space-y-1">
-      {routes.map(({ path, title, Icon }) => {
-        return <Route Icon={Icon} title={title} path={path} />;
-      })}
-    </div>
+    <nav className="flex flex-col gap-0.5">
+      {routes.map(({ path, title, Icon }) => (
+        <Route key={path} icon={Icon} title={title} path={path} onNavClick={onNavClick} />
+      ))}
+    </nav>
   );
 };
 
 export default RouteSelect;
 
-const Route = ({ Icon, title, path }) => {
+const Route = ({ icon, title, path, onNavClick }) => {
+  const Icon = icon;
   return (
     <NavLink
-      className={({
-        isActive,
-      }) => `flex items-center justify-start gap-2 w-full rounded px-2 py-1.5 
-        text-sm transition-[box-shadow_background-color_color] ${
-          isActive
-            ? "bg-white text-stone-950 shadow"
-            : "hover:bg-stone-200 bg-transparent text-stone-500 shadow-none"
-        }`}
       to={path}
+      end={path === "/"}
+      onClick={onNavClick}
+      className="flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200"
+      style={({ isActive }) =>
+        isActive
+          ? {
+              background: "var(--sidebar-active)",
+              color: "var(--sidebar-text-active)",
+              boxShadow: "inset 0 0 0 1px var(--sidebar-active-border)",
+            }
+          : {
+              color: "var(--sidebar-text)",
+            }
+      }
+      onMouseEnter={(e) => {
+        if (!e.currentTarget.classList.contains("active")) {
+          e.currentTarget.style.background = "var(--sidebar-hover)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!e.currentTarget.style.boxShadow) {
+          e.currentTarget.style.background = "";
+        }
+      }}
     >
       {({ isActive }) => (
         <>
-          <Icon className={isActive ? "text-pink-900" : ""} />
+          <Icon
+            size={15}
+            style={{ color: isActive ? "var(--sidebar-icon-active)" : "inherit", flexShrink: 0 }}
+          />
           <span>{title}</span>
         </>
       )}
