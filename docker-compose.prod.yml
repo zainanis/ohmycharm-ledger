@@ -4,15 +4,24 @@ services:
       context: ./frontend
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+    ports:
+      - "5173:5173"
     environment:
       - NODE_ENV=production
       - VITE_API_BASE_URL=${VITE_API_BASE_URL}
-    volumes: []
-    command: npx vite --host --port 3000
+    restart: always
 
   backend:
+    build: ./backend
+    ports:
+      - "5001:5001"
     environment:
       - NODE_ENV=production
+      - PORT=5001
+      - MONGO_URI=${MONGO_URI}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SESSION_SECRET=${MONGOSESSION_SECRET_URI}
       - FRONTEND_URL=${FRONTEND_URL}
-    volumes: []
     command: node server.js
+    restart: always

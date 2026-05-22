@@ -26,7 +26,7 @@ jobs:
 
       - name: Rebuild and restart containers
         working-directory: /opt/ohmycharm-ledger
-        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml -p ohmycharm up --build -d
+        run: docker compose -f docker-compose.prod.yml -p ohmycharm up --build -d
 
       - name: Clean up old images
         run: docker image prune -f
