@@ -25,3 +25,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
     command: node server.js
     restart: always
+networks:
+  default:
+    name: nginx-proxy
+    external: true
