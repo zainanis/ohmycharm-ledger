@@ -14,6 +14,19 @@ jobs:
         working-directory: /opt/ohmycharm-ledger
         run: git pull origin prod
 
+      - name: Create env file
+        working-directory: /opt/ohmycharm-ledger
+        run: |
+          echo "MONGO_URI=${{ secrets.MONGO_URI }}" > .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+          echo "MONGOSESSION_SECRET_URI=${{ secrets.MONGOSESSION_SECRET_URI }}" >> .env
+          echo "FRONTEND_URL=https://ohmycharm.zainanis.com" >> .env
+          echo "VITE_API_BASE_URL=https://api.ohmycharm.zainanis.com" >> .env
+
       - name: Rebuild and restart containers
         working-directory: /opt/ohmycharm-ledger
-        run: docker-compose -p ohmycharm up --build -d
+        run: docker compose -f docker-compose.yml -f docker-compose.prod.yml -p ohmycharm up --build -d
+
+      - name: Clean up old images
+        run: docker image prune -f
