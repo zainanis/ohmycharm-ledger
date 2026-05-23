@@ -69,9 +69,6 @@ const Expenses = () => {
     <div className="page-card">
       <div className="page-header">
         <h1 className="page-title">Expenses</h1>
-        <NavLink className="btn btn-success" to="add">
-          <Plus size={16} /> New Expense
-        </NavLink>
       </div>
 
       <div className="page-body">
@@ -118,6 +115,9 @@ const Expenses = () => {
                 )}
               </select>
             </div>
+            <NavLink className="btn btn-success" to="add">
+              <Plus size={16} /> New Expense
+            </NavLink>
           </div>
         </div>
 

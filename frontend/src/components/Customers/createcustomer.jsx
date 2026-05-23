@@ -31,12 +31,13 @@ export const Createcustomer = () => {
       }
       setLoadingItem(false);
     };
-    if (allCustomers.length === 0) {
-      api.get("/api/customers")
-        .then((res) => { dispatch(setCustomers(res.data.data)); populate(res.data.data); })
-        .catch(() => setLoadingItem(false));
+    const cached = allCustomers.find((c) => c._id === id);
+    if (cached) {
+      populate([cached]);
     } else {
-      populate(allCustomers);
+      api.get(`/api/customers/${id}`)
+        .then((res) => populate([res.data]))
+        .catch(() => setLoadingItem(false));
     }
   }, [id]);
 

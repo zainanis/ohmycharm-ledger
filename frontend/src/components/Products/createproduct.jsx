@@ -31,12 +31,13 @@ export const Createproduct = () => {
       }
       setLoadingItem(false);
     };
-    if (allProducts.length === 0) {
-      api.get("/api/products")
-        .then((res) => { dispatch(setProducts(res.data.data)); populate(res.data.data); })
-        .catch(() => setLoadingItem(false));
+    const cached = allProducts.find((p) => p._id === id);
+    if (cached) {
+      populate([cached]);
     } else {
-      populate(allProducts);
+      api.get(`/api/products/${id}`)
+        .then((res) => populate([res.data]))
+        .catch(() => setLoadingItem(false));
     }
   }, [id]);
 

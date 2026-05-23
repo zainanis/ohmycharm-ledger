@@ -35,12 +35,13 @@ const Createexpense = () => {
       }
       setLoadingItem(false);
     };
-    if (allExpenses.length === 0) {
-      api.get("/api/expenses")
-        .then((res) => { dispatch(setExpenses(res.data.data)); populate(res.data.data); })
-        .catch(() => setLoadingItem(false));
+    const cached = allExpenses.find((e) => e._id === id);
+    if (cached) {
+      populate([cached]);
     } else {
-      populate(allExpenses);
+      api.get(`/api/expenses/${id}`)
+        .then((res) => populate([res.data]))
+        .catch(() => setLoadingItem(false));
     }
   }, [id]);
 
