@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ArrowLeft, FileText, DollarSign, Calendar, AlignLeft, Tag, CreditCard, Loader2 } from "lucide-react";
 import { addExpense, setExpenses, updateExpense } from "../../state/expenseSlice";
 import api from "../../utils/client.js";
+import { queryClient } from "../../main.jsx";
 
 const Createexpense = () => {
   const { id } = useParams();
@@ -12,6 +13,7 @@ const Createexpense = () => {
   const allExpenses = useSelector((state) => state.expenses.allExpenses);
 
   const [submitting,   setSubmitting]   = useState(false);
+  const [loadingItem,  setLoadingItem]  = useState(!!id);
   const [name,         setName]         = useState("");
   const [date,         setDate]         = useState("");
   const [cost,         setCost]         = useState("");
@@ -21,19 +23,26 @@ const Createexpense = () => {
 
   useEffect(() => {
     if (!id) return;
+    const populate = (expenses) => {
+      const expense = expenses.find((e) => e._id === id);
+      if (expense) {
+        setName(expense.name || "");
+        setDate(expense.date?.slice(0, 10) || "");
+        setCost(expense.cost || "");
+        setDescription(expense.description || "");
+        setExpenseType(expense.type || "");
+        setPaymentMode(expense.paymentMode || "");
+      }
+      setLoadingItem(false);
+    };
     if (allExpenses.length === 0) {
-      api.get("/api/expenses").then((res) => dispatch(setExpenses(res.data))).catch(console.error);
+      api.get("/api/expenses")
+        .then((res) => { dispatch(setExpenses(res.data.data)); populate(res.data.data); })
+        .catch(() => setLoadingItem(false));
+    } else {
+      populate(allExpenses);
     }
-    const expense = allExpenses.find((e) => e._id === id);
-    if (expense) {
-      setName(expense.name || "");
-      setDate(expense.date?.slice(0, 10) || "");
-      setCost(expense.cost || "");
-      setDescription(expense.description || "");
-      setExpenseType(expense.type || "");
-      setPaymentMode(expense.paymentMode || "");
-    }
-  }, [id, allExpenses]);
+  }, [id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -43,6 +52,8 @@ const Createexpense = () => {
     request
       .then((res) => {
         dispatch(id ? updateExpense(res.data) : addExpense(res.data));
+        queryClient.invalidateQueries({ queryKey: ["expenses"] });
+        queryClient.invalidateQueries({ queryKey: ["ledger"] });
         navigate("/expenses", { replace: true });
       })
       .catch(console.error)
@@ -77,7 +88,7 @@ const Createexpense = () => {
 
       <div className="page-body">
         <div className="max-w-2xl w-full mx-auto form-card">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {loadingItem ? <FormSkeleton rows={4} /> : <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {/* Name + Cost */}
             <div className="form-grid-2">
               <Field label="Expense Name" icon={<FileText size={15} />} required>
@@ -182,12 +193,27 @@ const Createexpense = () => {
                 {submitting ? "Saving…" : id ? "Update Expense" : "Create Expense"}
               </button>
             </div>
-          </form>
+          </form>}
         </div>
       </div>
     </div>
   );
 };
+
+const FormSkeleton = ({ rows }) => (
+  <div className="flex flex-col gap-5">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="flex flex-col gap-1.5">
+        <div className={`skeleton skeleton-d${(i % 5) + 1}`} style={{ height: 14, width: 90, borderRadius: 4 }} />
+        <div className={`skeleton skeleton-d${(i % 5) + 1}`} style={{ height: 42, borderRadius: 12 }} />
+      </div>
+    ))}
+    <div className="flex gap-3 pt-2">
+      <div className="skeleton" style={{ height: 42, flex: 1, borderRadius: 12 }} />
+      <div className="skeleton" style={{ height: 42, flex: 1, borderRadius: 12 }} />
+    </div>
+  </div>
+);
 
 const Field = ({ label, icon, required, children }) => (
   <div className="flex flex-col gap-1.5">

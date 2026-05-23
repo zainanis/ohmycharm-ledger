@@ -1,47 +1,56 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { NavLink } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../main.jsx";
 import Paginate from "../components/utils/Paginate.jsx";
 import Customercard from "../components/Customers/Customercard.jsx";
 import api from "../utils/client.js";
 
 const LIMIT = 12;
 
+const fetchCustomers = ({ page, search }) =>
+  api.get("/api/customers", {
+    params: { page, limit: LIMIT, ...(search.trim() && { search: search.trim() }) },
+  }).then((r) => r.data);
+
 const Customers = () => {
-  const [data,        setData]        = useState([]);
-  const [total,       setTotal]       = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [search,      setSearch]      = useState("");
-  const [loading,     setLoading]     = useState({ loading: false, what: null });
-
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef(null);
 
-  const fetchCustomers = (overrides = {}) => {
-    const params = {
-      page: currentPage,
-      limit: LIMIT,
-      ...(search.trim() && { search: search.trim() }),
-      ...overrides,
-    };
-    setLoading({ loading: true, what: "Customers" });
-    api.get("/api/customers", { params })
-      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
-      .catch(console.error)
-      .finally(() => setLoading({ loading: false, what: null }));
-  };
+  const { data, isFetching } = useQuery({
+    queryKey: ["customers", currentPage, debouncedSearch],
+    queryFn:  () => fetchCustomers({ page: currentPage, search: debouncedSearch }),
+    placeholderData: (prev) => prev,
+  });
 
-  useEffect(() => {
+  const handleSearch = (val) => {
+    setSearch(val);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setCurrentPage(1);
-      fetchCustomers({ page: 1, search: search.trim() });
+      setDebouncedSearch(val);
     }, 300);
-    return () => clearTimeout(searchTimer.current);
-  }, [search]);
+  };
+
+  const loading      = { loading: isFetching && !data, what: null };
+  const isRefetching = isFetching && !!data;
+  const totalPages   = Math.ceil((data?.total ?? 0) / LIMIT);
 
   useEffect(() => {
-    fetchCustomers();
-  }, [currentPage]);
+    if (!data) return;
+    [-2, -1, 1, 2]
+      .map((d) => currentPage + d)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .forEach((p) =>
+        queryClient.prefetchQuery({
+          queryKey: ["customers", p, debouncedSearch],
+          queryFn:  () => fetchCustomers({ page: p, search: debouncedSearch }),
+        })
+      );
+  }, [data, currentPage, totalPages, debouncedSearch]);
 
   return (
     <div className="page-card">
@@ -52,7 +61,7 @@ const Customers = () => {
           className="form-control search-input"
           placeholder="Search customers…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
         />
       </div>
 
@@ -64,12 +73,14 @@ const Customers = () => {
         </div>
 
         <Paginate
-          items={data}
+          items={data?.data ?? []}
           renderItem={(customer) => <Customercard key={customer._id} {...customer} />}
+          pageKey="customers"
           loading={loading}
+          isRefetching={isRefetching}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
-          total={total}
+          total={data?.total ?? 0}
           itemsPerPage={LIMIT}
         />
       </div>

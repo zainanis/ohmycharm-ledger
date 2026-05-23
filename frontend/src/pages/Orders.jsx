@@ -1,74 +1,85 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import api from "../utils/client.js";
 import { Plus, X } from "lucide-react";
 import { NavLink } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../main.jsx";
 import Mytable from "../components/utils/Mytable.jsx";
 
 const LIMIT = 20;
 
+const fetchOrders = (params) =>
+  api.get("/api/orders", { params }).then((r) => r.data);
+
 const Orders = () => {
-  const [data,      setData]      = useState([]);
-  const [total,     setTotal]     = useState(0);
   const [page,      setPage]      = useState(1);
   const [filter,    setFilter]    = useState("All");
   const [filterBy,  setFilterBy]  = useState("status");
   const [orderBy,   setOrderBy]   = useState("orderDate");
-  const [loading,   setLoading]   = useState({ loading: false, what: null });
   const [from,      setFrom]      = useState("");
   const [to,        setTo]        = useState("");
   const [search,    setSearch]    = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [dateError, setDateError] = useState("");
-
   const searchTimer = useRef(null);
 
-  const fetchOrders = (overrides = {}) => {
-    const params = {
-      sortBy: orderBy,
-      page,
-      limit: LIMIT,
-      ...(filter !== "All" && { [filterBy]: filter }),
-      ...(from && { from }),
-      ...(to && { to }),
-      ...(search.trim() && { search: search.trim() }),
-      ...overrides,
-    };
-    setLoading({ loading: true, what: "Orders" });
-    api.get("/api/orders", { params })
-      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
-      .catch(console.error)
-      .finally(() => setLoading({ loading: false, what: null }));
-  };
+  const buildParams = (overrides = {}) => ({
+    sortBy: orderBy,
+    page,
+    limit: LIMIT,
+    ...(filter !== "All" && { [filterBy]: filter }),
+    ...(from && { from }),
+    ...(to && { to }),
+    ...(debouncedSearch.trim() && { search: debouncedSearch.trim() }),
+    ...overrides,
+  });
 
-  // Refetch when non-search filters change
-  useEffect(() => {
-    setPage(1);
-    fetchOrders({ page: 1 });
-  }, [filter, filterBy, orderBy, from, to]);
+  const queryKey = ["orders", page, filter, filterBy, orderBy, from, to, debouncedSearch];
 
-  // Debounce search
+  const { data, isFetching } = useQuery({
+    queryKey,
+    queryFn: () => fetchOrders(buildParams()),
+    placeholderData: (prev) => prev,
+  });
+
+  const loading    = { loading: isFetching && !data, what: null };
+  const totalPages = Math.ceil((data?.total ?? 0) / LIMIT);
+
   useEffect(() => {
+    if (!data) return;
+    [-2, -1, 1, 2]
+      .map((d) => page + d)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .forEach((p) =>
+        queryClient.prefetchQuery({
+          queryKey: ["orders", p, filter, filterBy, orderBy, from, to, debouncedSearch],
+          queryFn:  () => fetchOrders(buildParams({ page: p })),
+        })
+      );
+  }, [data, page, totalPages, filter, filterBy, orderBy, from, to, debouncedSearch]);
+
+  const handleSearch = (val) => {
+    setSearch(val);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setPage(1);
-      fetchOrders({ page: 1, search: search.trim() });
+      setDebouncedSearch(val);
     }, 300);
-    return () => clearTimeout(searchTimer.current);
-  }, [search]);
+  };
 
-  // Refetch when page changes
-  useEffect(() => {
-    fetchOrders();
-  }, [page]);
+  const handleFilterChange   = (val) => { setFilter(val);  setPage(1); };
+  const handleFilterByChange = (val) => { setFilterBy(val); setFilter("All"); setPage(1); };
+  const handleOrderByChange  = (val) => { setOrderBy(val); setPage(1); };
 
   const handleFrom = (val) => {
     if (to && new Date(val) > new Date(to)) { setDateError("'From' date cannot be later than 'To' date."); return; }
-    setDateError(""); setFrom(val);
+    setDateError(""); setFrom(val); setPage(1);
   };
   const handleTo = (val) => {
     if (from && new Date(val) < new Date(from)) { setDateError("'To' date cannot be earlier than 'From' date."); return; }
-    setDateError(""); setTo(val);
+    setDateError(""); setTo(val); setPage(1);
   };
-  const clearDates = () => { setFrom(""); setTo(""); setDateError(""); };
+  const clearDates = () => { setFrom(""); setTo(""); setDateError(""); setPage(1); };
 
   return (
     <div className="page-card">
@@ -79,7 +90,7 @@ const Orders = () => {
           type="text"
           placeholder="Search by customer name"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
         />
       </div>
 
@@ -88,7 +99,7 @@ const Orders = () => {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Order By</label>
-              <select value={orderBy} onChange={(e) => setOrderBy(e.target.value)} className="form-control">
+              <select value={orderBy} onChange={(e) => handleOrderByChange(e.target.value)} className="form-control">
                 <option value="orderDate">Order Date</option>
                 <option value="sentDate">Sent Date</option>
                 <option value="recieveDate">Receive Date</option>
@@ -112,14 +123,14 @@ const Orders = () => {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Filter By</label>
-              <select value={filterBy} onChange={(e) => { setFilterBy(e.target.value); setFilter("All"); }} className="form-control">
+              <select value={filterBy} onChange={(e) => handleFilterByChange(e.target.value)} className="form-control">
                 <option value="status">Status</option>
                 <option value="paymentMode">Payment Mode</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>&nbsp;</label>
-              <select value={filter} onChange={(e) => setFilter(e.target.value)} className="form-control">
+              <select value={filter} onChange={(e) => handleFilterChange(e.target.value)} className="form-control">
                 {filterBy === "status" ? (
                   <>
                     <option value="All">All statuses</option>
@@ -147,7 +158,7 @@ const Orders = () => {
 
         <Mytable
           who="orders"
-          data={data}
+          data={data?.data ?? []}
           loading={loading}
           header={[
             { label: "Customer",     path: ".customerId.name" },
@@ -158,7 +169,7 @@ const Orders = () => {
             { label: "Payment Mode", path: ".paymentMode" },
             { label: "Total",        path: ".totalAmount" },
           ]}
-          total={total}
+          total={data?.total ?? 0}
           page={page}
           limit={LIMIT}
           onPageChange={setPage}

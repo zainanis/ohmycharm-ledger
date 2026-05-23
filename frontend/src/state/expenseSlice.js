@@ -20,10 +20,14 @@ const expenseSlice = createSlice({
         return expense._id !== action.payload._id;
       });
     },
+    primeExpense: (state, action) => {
+      const exists = state.allExpenses.some((e) => e._id === action.payload._id);
+      if (!exists) state.allExpenses.push(action.payload);
+    },
   },
 });
 
-export const { setExpenses, addExpense, updateExpense, deleteExpense } =
+export const { setExpenses, addExpense, updateExpense, deleteExpense, primeExpense } =
   expenseSlice.actions;
 
 export default expenseSlice.reducer;

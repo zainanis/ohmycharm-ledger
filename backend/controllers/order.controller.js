@@ -56,18 +56,20 @@ const createOrder = async (req, res) => {
         return res.status(404).json("product does not exist");
       }
 
+      const computedPrice = product.price * item.quantity;
       const [newprodorder] = await ProdOrder.create(
         [
           {
             productId: product._id,
             orderId: newOrder._id,
             quantity: item.quantity,
+            totalPrice: computedPrice,
           },
         ],
         { session }
       );
 
-      totalAmount += newprodorder.totalPrice;
+      totalAmount += computedPrice;
       prodOrderDocs.push(newprodorder);
     }
     totalAmount = totalAmount - discount;
@@ -119,19 +121,24 @@ const getAllOrders = async (req, res) => {
         match[dateField].$lte = toDate;
       }
     }
+    const skip = (Number(page) - 1) * Number(limit);
+
     if (search) {
-      const customers = await Customer.find({ name: { $regex: search, $options: "i" } }, "_id");
+      const customers = await Customer.find(
+        { name: { $regex: search, $options: "i" } },
+        "_id"
+      ).lean();
       match.customerId = { $in: customers.map((c) => c._id) };
     }
 
-    const skip = (Number(page) - 1) * Number(limit);
     const [total, data] = await Promise.all([
       Order.countDocuments(match),
       Order.find(match)
         .populate("customerId", "name")
-        .sort({ [dateField]: 1 })
+        .sort({ [dateField]: -1 })
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(Number(limit))
+        .lean(),
     ]);
 
     res.status(200).json({ data, total, page: Number(page), limit: Number(limit) });
@@ -143,12 +150,11 @@ const getAllOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findById(id);
+    const [order, products] = await Promise.all([
+      Order.findById(id).populate("customerId", "name email phoneNumber address").lean(),
+      ProdOrder.find({ orderId: id }).populate("productId", "name price").lean(),
+    ]);
     if (!order) return res.status(404).json("Order does not exists");
-    const products = await ProdOrder.find({ orderId: id }).populate(
-      "productId",
-      "name price"
-    );
     res.status(200).json({ order, products });
   } catch (error) {
     res.status(500).json(error.message);
@@ -189,17 +195,19 @@ const updateOrderById = async (req, res) => {
           return res.status(404).json("product does not exist");
         }
 
+        const computedPrice = product.price * item.quantity;
         const [newprodorder] = await ProdOrder.create(
           [
             {
               productId: product._id,
               orderId: id,
               quantity: item.quantity,
+              totalPrice: computedPrice,
             },
           ],
           { session }
         );
-        totalAmount += newprodorder.totalPrice;
+        totalAmount += computedPrice;
         prodOrderDocs.push(newprodorder);
       }
       totalAmount = totalAmount - (discount ?? 0);
@@ -266,10 +274,29 @@ const deleteOrderById = async (req, res) => {
     session.endSession();
   }
 };
+const updateDelivery = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { delivery } = req.body;
+    if (typeof delivery !== "number" || delivery < 0)
+      return res.status(400).json("delivery must be a non-negative number");
+    const updated = await Order.findByIdAndUpdate(
+      id,
+      { delivery },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json("Order does not exist");
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+};
+
 module.exports = {
   createOrder,
   getAllOrders,
   getOrderById,
   updateOrderById,
   deleteOrderById,
+  updateDelivery,
 };

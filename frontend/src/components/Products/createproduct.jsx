@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { ArrowLeft, Tag, DollarSign, FileText, ToggleRight, Loader2 } from "lucide-react";
 import { addProduct, updateProduct, setProducts } from "../../state/productsSlice";
+import { queryClient } from "../../main.jsx";
 
 export const Createproduct = () => {
   const { id } = useParams();
@@ -12,6 +13,7 @@ export const Createproduct = () => {
   const allProducts = useSelector((state) => state.products.allProducts);
 
   const [submitting,   setSubmitting]   = useState(false);
+  const [loadingItem,  setLoadingItem]  = useState(!!id);
   const [name,         setName]         = useState("");
   const [price,        setPrice]        = useState("");
   const [description,  setDescription]  = useState("");
@@ -19,17 +21,24 @@ export const Createproduct = () => {
 
   useEffect(() => {
     if (!id) return;
+    const populate = (products) => {
+      const product = products.find((p) => p._id === id);
+      if (product) {
+        setName(product.name || "");
+        setPrice(product.price || "");
+        setDescription(product.description || "");
+        setStatus(product.status || "Available");
+      }
+      setLoadingItem(false);
+    };
     if (allProducts.length === 0) {
-      api.get("/api/products").then((res) => dispatch(setProducts(res.data))).catch(console.error);
+      api.get("/api/products")
+        .then((res) => { dispatch(setProducts(res.data.data)); populate(res.data.data); })
+        .catch(() => setLoadingItem(false));
+    } else {
+      populate(allProducts);
     }
-    const product = allProducts.find((p) => p._id === id);
-    if (product) {
-      setName(product.name || "");
-      setPrice(product.price || "");
-      setDescription(product.description || "");
-      setStatus(product.status || "Available");
-    }
-  }, [id, allProducts]);
+  }, [id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,6 +48,7 @@ export const Createproduct = () => {
     request
       .then((res) => {
         dispatch(id ? updateProduct(res.data) : addProduct(res.data));
+        queryClient.invalidateQueries({ queryKey: ["products"] });
         navigate("/products", { replace: true });
       })
       .catch(console.error)
@@ -69,7 +79,7 @@ export const Createproduct = () => {
 
       <div className="page-body">
         <div className="max-w-xl w-full mx-auto form-card">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {loadingItem ? <FormSkeleton rows={3} /> : <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {/* Name + Price side by side */}
             <div className="form-grid-2">
               <Field label="Product Name" icon={<Tag size={15} />} required>
@@ -163,12 +173,27 @@ export const Createproduct = () => {
                 {submitting ? "Saving…" : id ? "Update Product" : "Create Product"}
               </button>
             </div>
-          </form>
+          </form>}
         </div>
       </div>
     </div>
   );
 };
+
+const FormSkeleton = ({ rows }) => (
+  <div className="flex flex-col gap-5">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="flex flex-col gap-1.5">
+        <div className={`skeleton skeleton-d${(i % 5) + 1}`} style={{ height: 14, width: 90, borderRadius: 4 }} />
+        <div className={`skeleton skeleton-d${(i % 5) + 1}`} style={{ height: 42, borderRadius: 12 }} />
+      </div>
+    ))}
+    <div className="flex gap-3 pt-2">
+      <div className="skeleton" style={{ height: 42, flex: 1, borderRadius: 12 }} />
+      <div className="skeleton" style={{ height: 42, flex: 1, borderRadius: 12 }} />
+    </div>
+  </div>
+);
 
 const Field = ({ label, icon, required, children }) => (
   <div className="flex flex-col gap-1.5">

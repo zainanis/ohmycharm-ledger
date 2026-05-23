@@ -5,6 +5,7 @@ const {
   getOrderById,
   updateOrderById,
   deleteOrderById,
+  updateDelivery,
 } = require("../controllers/order.controller");
 const validate = require("../middleware/validate");
 
@@ -20,6 +21,7 @@ router.post("/", validate(orderSchema), createOrder);
 router.get("/", getAllOrders);
 router.get("/:id", getOrderById);
 router.put("/:id", updateOrderById);
+router.patch("/:id/delivery", updateDelivery);
 router.delete("/:id", deleteOrderById);
 
 module.exports = router;

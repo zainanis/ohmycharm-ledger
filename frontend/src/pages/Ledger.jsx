@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../utils/client.js";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../main.jsx";
 import Mytable from "../components/utils/Mytable.jsx";
 import { Download, X } from "lucide-react";
 
 const LIMIT = 20;
 
+const fetchLedger = (params) =>
+  api.get("/api/ledger", { params }).then((r) => r.data);
+
 const Ledger = () => {
-  const [data,      setData]      = useState([]);
-  const [total,     setTotal]     = useState(0);
   const [page,      setPage]      = useState(1);
   const [filter,    setFilter]    = useState("All");
   const [filterBy,  setFilterBy]  = useState("type");
-  const [loading,   setLoading]   = useState({ loading: false, what: null });
   const [from,      setFrom]      = useState("");
   const [to,        setTo]        = useState("");
   const [dateError, setDateError] = useState("");
@@ -25,38 +27,46 @@ const Ledger = () => {
     ...overrides,
   });
 
-  const fetchLedger = (overrides = {}) => {
-    setLoading({ loading: true, what: "Ledger" });
-    api.get("/api/ledger", { params: buildParams(overrides) })
-      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
-      .catch(console.error)
-      .finally(() => setLoading({ loading: false, what: null }));
-  };
+  const queryKey = ["ledger", page, filter, filterBy, from, to];
+
+  const { data, isFetching } = useQuery({
+    queryKey,
+    queryFn: () => fetchLedger(buildParams()),
+    placeholderData: (prev) => prev,
+  });
+
+  const loading    = { loading: isFetching && !data, what: null };
+  const totalPages = Math.ceil((data?.total ?? 0) / LIMIT);
 
   useEffect(() => {
-    setPage(1);
-    fetchLedger({ page: 1 });
-  }, [filter, filterBy, from, to]);
+    if (!data) return;
+    [-2, -1, 1, 2]
+      .map((d) => page + d)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .forEach((p) =>
+        queryClient.prefetchQuery({
+          queryKey: ["ledger", p, filter, filterBy, from, to],
+          queryFn:  () => fetchLedger(buildParams({ page: p })),
+        })
+      );
+  }, [data, page, totalPages, filter, filterBy, from, to]);
 
-  useEffect(() => {
-    fetchLedger();
-  }, [page]);
+  const handleFilterChange   = (val) => { setFilter(val);  setPage(1); };
+  const handleFilterByChange = (val) => { setFilterBy(val); setFilter("All"); setPage(1); };
 
   const handleFrom = (val) => {
     if (to && new Date(val) > new Date(to)) { setDateError("'From' date cannot be later than 'To' date."); return; }
-    setDateError(""); setFrom(val);
+    setDateError(""); setFrom(val); setPage(1);
   };
   const handleTo = (val) => {
     if (from && new Date(val) < new Date(from)) { setDateError("'To' date cannot be earlier than 'From' date."); return; }
-    setDateError(""); setTo(val);
+    setDateError(""); setTo(val); setPage(1);
   };
-  const clearDates = () => { setFrom(""); setTo(""); setDateError(""); };
+  const clearDates = () => { setFrom(""); setTo(""); setDateError(""); setPage(1); };
 
   const handleExportCSV = async () => {
-    // Fetch all filtered entries (no pagination) for export
     const res = await api.get("/api/ledger", { params: buildParams({ page: 1, limit: 999999 }) });
     const rows = res.data.data;
-
     const headers = ["Date", "Source", "Type", "Payment Mode", "Amount", "Running Total"];
     const csvRows = [
       headers.join(","),
@@ -71,14 +81,11 @@ const Ledger = () => {
         ].join(",")
       ),
     ];
-
     const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ledger-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `ledger-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
   };
 
   return (
@@ -111,14 +118,14 @@ const Ledger = () => {
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Filter By</label>
-              <select value={filterBy} onChange={(e) => { setFilterBy(e.target.value); setFilter("All"); }} className="form-control">
+              <select value={filterBy} onChange={(e) => handleFilterByChange(e.target.value)} className="form-control">
                 <option value="type">Type</option>
                 <option value="paymentMode">Payment Mode</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>&nbsp;</label>
-              <select value={filter} onChange={(e) => setFilter(e.target.value)} className="form-control">
+              <select value={filter} onChange={(e) => handleFilterChange(e.target.value)} className="form-control">
                 {filterBy === "type" ? (
                   <>
                     <option value="All">All</option>
@@ -141,7 +148,7 @@ const Ledger = () => {
 
         <Mytable
           who="ledger"
-          data={data}
+          data={data?.data ?? []}
           loading={loading}
           header={[
             { label: "Source",        path: ".source" },
@@ -151,7 +158,7 @@ const Ledger = () => {
             { label: "Date",          path: ".date" },
             { label: "Running Total", path: ".runningTotal" },
           ]}
-          total={total}
+          total={data?.total ?? 0}
           page={page}
           limit={LIMIT}
           onPageChange={setPage}

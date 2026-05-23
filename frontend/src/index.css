@@ -67,6 +67,14 @@ h3,
   animation: fadeSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes gridFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.grid-enter {
+  animation: gridFadeIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ── Modal animations ── */
 @keyframes modalIn {
   from {

@@ -1,54 +1,66 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import api from "../utils/client";
 import { Plus } from "lucide-react";
 import { NavLink } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "../main.jsx";
 import Paginate from "../components/utils/Paginate";
 import ProductCard from "../components/Products/ProductCard";
 
 const LIMIT = 12;
 
+const fetchProducts = ({ page, status, search }) =>
+  api.get("/api/products", {
+    params: {
+      page, limit: LIMIT,
+      ...(status !== "All" && { status }),
+      ...(search.trim() && { search: search.trim() }),
+    },
+  }).then((r) => r.data);
+
 const Products = () => {
-  const [data,           setData]           = useState([]);
-  const [total,          setTotal]          = useState(0);
   const [currentPage,    setCurrentPage]    = useState(1);
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [search,         setSearch]         = useState("");
-  const [loading,        setLoading]        = useState({ loading: false, what: null });
-
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimer = useRef(null);
 
-  const fetchProducts = (overrides = {}) => {
-    const params = {
-      page: currentPage,
-      limit: LIMIT,
-      ...(selectedStatus !== "All" && { status: selectedStatus }),
-      ...(search.trim() && { search: search.trim() }),
-      ...overrides,
-    };
-    setLoading({ loading: true, what: "Products" });
-    api.get("/api/products", { params })
-      .then((res) => { setData(res.data.data); setTotal(res.data.total); })
-      .catch(console.error)
-      .finally(() => setLoading({ loading: false, what: null }));
-  };
+  const { data, isFetching } = useQuery({
+    queryKey: ["products", currentPage, selectedStatus, debouncedSearch],
+    queryFn:  () => fetchProducts({ page: currentPage, status: selectedStatus, search: debouncedSearch }),
+    placeholderData: (prev) => prev, // keep showing old data while fetching new page
+  });
 
-  useEffect(() => {
-    setCurrentPage(1);
-    fetchProducts({ page: 1 });
-  }, [selectedStatus]);
-
-  useEffect(() => {
+  const handleSearch = (val) => {
+    setSearch(val);
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(() => {
       setCurrentPage(1);
-      fetchProducts({ page: 1, search: search.trim() });
+      setDebouncedSearch(val);
     }, 300);
-    return () => clearTimeout(searchTimer.current);
-  }, [search]);
+  };
+
+  const handleStatus = (val) => {
+    setSelectedStatus(val);
+    setCurrentPage(1);
+  };
+
+  const loading      = { loading: isFetching && !data, what: null };
+  const isRefetching = isFetching && !!data;
+  const totalPages   = Math.ceil((data?.total ?? 0) / LIMIT);
 
   useEffect(() => {
-    fetchProducts();
-  }, [currentPage]);
+    if (!data) return;
+    [-2, -1, 1, 2]
+      .map((d) => currentPage + d)
+      .filter((p) => p >= 1 && p <= totalPages)
+      .forEach((p) =>
+        queryClient.prefetchQuery({
+          queryKey: ["products", p, selectedStatus, debouncedSearch],
+          queryFn:  () => fetchProducts({ page: p, status: selectedStatus, search: debouncedSearch }),
+        })
+      );
+  }, [data, currentPage, totalPages, selectedStatus, debouncedSearch]);
 
   return (
     <div className="page-card">
@@ -59,7 +71,7 @@ const Products = () => {
           className="form-control search-input"
           placeholder="Search products…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
         />
       </div>
 
@@ -67,8 +79,9 @@ const Products = () => {
         <div className="flex justify-end gap-3">
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
+            onChange={(e) => handleStatus(e.target.value)}
             className="form-control"
+            style={{ width: "auto" }}
           >
             <option value="All">All statuses</option>
             <option value="Available">Available</option>
@@ -81,12 +94,14 @@ const Products = () => {
         </div>
 
         <Paginate
-          items={data}
+          items={data?.data ?? []}
           renderItem={(product) => <ProductCard key={product._id} {...product} />}
+          pageKey="products"
           loading={loading}
+          isRefetching={isRefetching}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
-          total={total}
+          total={data?.total ?? 0}
           itemsPerPage={LIMIT}
         />
       </div>

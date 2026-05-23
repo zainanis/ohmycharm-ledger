@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { ArrowLeft, User, Phone, MapPin, Mail, Loader2 } from "lucide-react";
 import { addCustomer, updateCustomer, setCustomers } from "../../state/customerSlice";
 import api from "../../utils/client.js";
+import { queryClient } from "../../main.jsx";
 
 export const Createcustomer = () => {
   const { id } = useParams();
@@ -11,7 +12,8 @@ export const Createcustomer = () => {
   const dispatch = useDispatch();
   const allCustomers = useSelector((state) => state.customers.allCustomers);
 
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting,  setSubmitting]  = useState(false);
+  const [loadingItem, setLoadingItem] = useState(!!id);
   const [name,        setName]        = useState("");
   const [phonenumber, setPhonenumber] = useState("");
   const [address,     setAddress]     = useState("");
@@ -19,17 +21,24 @@ export const Createcustomer = () => {
 
   useEffect(() => {
     if (!id) return;
+    const populate = (customers) => {
+      const customer = customers.find((c) => c._id === id);
+      if (customer) {
+        setName(customer.name || "");
+        setAddress(customer.address || "");
+        setPhonenumber(customer.phoneNumber || "");
+        setEmail(customer.email || "");
+      }
+      setLoadingItem(false);
+    };
     if (allCustomers.length === 0) {
-      api.get("/api/customers").then((res) => dispatch(setCustomers(res.data))).catch(console.error);
+      api.get("/api/customers")
+        .then((res) => { dispatch(setCustomers(res.data.data)); populate(res.data.data); })
+        .catch(() => setLoadingItem(false));
+    } else {
+      populate(allCustomers);
     }
-    const customer = allCustomers.find((c) => c._id === id);
-    if (customer) {
-      setName(customer.name || "");
-      setAddress(customer.address || "");
-      setPhonenumber(customer.phoneNumber || "");
-      setEmail(customer.email || "");
-    }
-  }, [id, allCustomers]);
+  }, [id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,6 +48,7 @@ export const Createcustomer = () => {
     request
       .then((res) => {
         dispatch(id ? updateCustomer(res.data) : addCustomer(res.data));
+        queryClient.invalidateQueries({ queryKey: ["customers"] });
         navigate("/customers", { replace: true });
       })
       .catch(console.error)
@@ -63,7 +73,7 @@ export const Createcustomer = () => {
 
       <div className="page-body">
         <div className="max-w-lg w-full mx-auto form-card">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          {loadingItem ? <FormSkeleton rows={4} /> : <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             {/* Name */}
             <Field label="Full Name" icon={<User size={15} />} required>
               <input
@@ -128,12 +138,27 @@ export const Createcustomer = () => {
                 {submitting ? "Saving…" : id ? "Update Customer" : "Create Customer"}
               </button>
             </div>
-          </form>
+          </form>}
         </div>
       </div>
     </div>
   );
 };
+
+const FormSkeleton = ({ rows }) => (
+  <div className="flex flex-col gap-5">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="flex flex-col gap-1.5">
+        <div className={`skeleton skeleton-d${(i % 5) + 1}`} style={{ height: 14, width: 90, borderRadius: 4 }} />
+        <div className={`skeleton skeleton-d${(i % 5) + 1}`} style={{ height: 42, borderRadius: 12 }} />
+      </div>
+    ))}
+    <div className="flex gap-3 pt-2">
+      <div className="skeleton" style={{ height: 42, flex: 1, borderRadius: 12 }} />
+      <div className="skeleton" style={{ height: 42, flex: 1, borderRadius: 12 }} />
+    </div>
+  </div>
+);
 
 const Field = ({ label, icon, required, children }) => (
   <div className="flex flex-col gap-1.5">

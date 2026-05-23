@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { setCustomers } from "../../state/customerSlice";
 import { setProducts } from "../../state/productsSlice";
-import { addOrder, setOrders, updateOrder } from "../../state/orderSlice";
+import { addOrder, updateOrder } from "../../state/orderSlice";
+import { queryClient } from "../../main.jsx";
 
 const ORDER_STATUSES = [
   { value: "Placed",      color: "#2563eb" },
@@ -29,7 +30,6 @@ const Createorders = () => {
 
   const allCustomers = useSelector((state) => state.customers.allCustomers);
   const allProducts  = useSelector((state) => state.products.allProducts);
-  const allOrders    = useSelector((state) => state.orders.allOrders);
 
   const [submitting,        setSubmitting]        = useState(false);
   const [initialLoading,    setInitialLoading]    = useState(true);
@@ -45,33 +45,46 @@ const Createorders = () => {
   const [validationError,   setValidationError]   = useState("");
 
   useEffect(() => {
-    const fetches = [];
-    if (allCustomers.length === 0) fetches.push(api.get("/api/customers").then((r) => dispatch(setCustomers(r.data))));
-    if (allProducts.length === 0)  fetches.push(api.get("/api/products").then((r) => dispatch(setProducts(r.data))));
-    if (allOrders.length === 0)    fetches.push(api.get("/api/orders").then((r) => dispatch(setOrders(r.data))));
-    Promise.all(fetches).catch(console.error).finally(() => setInitialLoading(false));
-  }, []);
+    // only fetch what the form actually needs: customers for dropdown, products for search
+    const dropdownFetches = [];
+    if (allCustomers.length === 0) dropdownFetches.push(api.get("/api/customers").then((r) => dispatch(setCustomers(r.data.data))));
+    if (allProducts.length === 0)  dropdownFetches.push(api.get("/api/products").then((r) => dispatch(setProducts(r.data.data))));
 
-  useEffect(() => {
-    if (!id || allProducts.length === 0) return;
-    api.get(`/api/orders/${id}`).then((res) => {
-      const order    = res.data.order;
-      const products = res.data.products;
-      setCustomerId(order.customerId || "");
-      setOrderStatus(order.status || "");
-      setOrderDate(order.orderDate?.slice(0, 10) || "");
-      setSentDate(order.sentDate?.slice(0, 10) || "");
-      setRecieveDate(order.recieveDate?.slice(0, 10) || "");
-      setPaymentMode(order.paymentMode || "");
-      setDiscount(order.discount || 0);
-      setSelectedProducts(
-        products.map((op) => {
-          const full = allProducts.find((p) => p._id === op.productId._id);
-          return { ...full, quantity: op.quantity || 1 };
+    if (!id) {
+      Promise.all(dropdownFetches).catch(console.error).finally(() => setInitialLoading(false));
+    } else {
+      const cached = queryClient.getQueryData(["order-detail", id]);
+      const orderDetailPromise = cached
+        ? Promise.resolve(cached)
+        : api.get(`/api/orders/${id}`).then((r) => r.data);
+
+      // dropdowns and order detail run fully in parallel
+      Promise.all([Promise.all(dropdownFetches).catch(console.error), orderDetailPromise])
+        .then(([, orderData]) => {
+          const order    = orderData.order;
+          const products = orderData.products;
+          // customerId may be a populated object or a plain ID string
+          setCustomerId(order.customerId?._id || order.customerId || "");
+          setOrderStatus(order.status || "");
+          setOrderDate(order.orderDate?.slice(0, 10) || "");
+          setSentDate(order.sentDate?.slice(0, 10) || "");
+          setRecieveDate(order.recieveDate?.slice(0, 10) || "");
+          setPaymentMode(order.paymentMode || "");
+          setDiscount(order.discount || 0);
+          // use product data from the response directly — avoids stale Redux closure
+          setSelectedProducts(
+            products.map((op) => ({
+              _id:      op.productId._id,
+              name:     op.productId.name,
+              price:    op.productId.price,
+              quantity: op.quantity || 1,
+            }))
+          );
         })
-      );
-    }).catch(console.error);
-  }, [id, allProducts]);
+        .catch(console.error)
+        .finally(() => setInitialLoading(false));
+    }
+  }, []);
 
   const subtotal = selectedProducts.reduce(
     (sum, p) => sum + (p.price || 0) * (p.quantity || 1), 0
@@ -118,6 +131,8 @@ const Createorders = () => {
         const orderRes = id ? res.data : res.data.order;
         orderRes.customerId = { _id: customerId, name: selectedCustomer?.name || "" };
         dispatch(id ? updateOrder(orderRes) : addOrder(orderRes));
+        queryClient.invalidateQueries({ queryKey: ["orders"] });
+        queryClient.invalidateQueries({ queryKey: ["ledger"] });
         navigate("/orders", { replace: true });
       })
       .catch(console.error)

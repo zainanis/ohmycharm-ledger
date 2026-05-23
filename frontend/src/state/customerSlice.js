@@ -22,9 +22,13 @@ const customersSlice = createSlice({
         return customer._id !== action.payload._id;
       });
     },
+    primeCustomer: (state, action) => {
+      const exists = state.allCustomers.some((c) => c._id === action.payload._id);
+      if (!exists) state.allCustomers.push(action.payload);
+    },
   },
 });
-export const { setCustomers, addCustomer, updateCustomer, deleteCustomer } =
+export const { setCustomers, addCustomer, updateCustomer, deleteCustomer, primeCustomer } =
   customersSlice.actions;
 
 export default customersSlice.reducer;

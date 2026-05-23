@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import api from "../../utils/client";
 import { useDispatch } from "react-redux";
@@ -6,6 +7,7 @@ import { deleteCustomer } from "../../state/customerSlice";
 import { deleteExpense } from "../../state/expenseSlice";
 import { deleteOrder } from "../../state/orderSlice";
 import { deleteProduct } from "../../state/productsSlice";
+import { queryClient } from "../../main.jsx";
 
 const Modal = ({ onClose, name, id, who }) => {
   const dispatch = useDispatch();
@@ -19,11 +21,13 @@ const Modal = ({ onClose, name, id, who }) => {
         products:  () => dispatch(deleteProduct({ _id: id })),
       };
       actions[who]?.();
+      queryClient.invalidateQueries({ queryKey: [who] });
+      if (who === "orders") queryClient.invalidateQueries({ queryKey: ["ledger"] });
       onClose();
     }).catch((err) => console.error(err.message));
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex justify-center items-center backdrop-enter"
       onClick={onClose}
@@ -79,7 +83,8 @@ const Modal = ({ onClose, name, id, who }) => {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

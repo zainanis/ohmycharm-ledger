@@ -1,7 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useDispatch } from "react-redux";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Modal from "./Modal";
+import { primeProduct } from "../../state/productsSlice";
+import { primeCustomer } from "../../state/customerSlice";
+import { primeExpense } from "../../state/expenseSlice";
+import { queryClient } from "../../main.jsx";
+import api from "../../utils/client.js";
+
+const getPageNumbers = (current, total) => {
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  let winStart = Math.max(1, current - 2);
+  let winEnd   = winStart + 4;
+  if (winEnd > total) { winEnd = total; winStart = Math.max(1, winEnd - 4); }
+  const nums = [];
+  if (winStart > 1) nums.push("...");
+  for (let i = winStart; i <= winEnd; i++) nums.push(i);
+  if (winEnd < total) nums.push("...");
+  return nums;
+};
 
 const Mytable = ({
   loading,
@@ -14,7 +32,21 @@ const Mytable = ({
   onPageChange,
 }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [selectedItem, setSelectedItem] = useState(null);
+
+  const prefetchForEdit = (item) => {
+    if (who === "products")  dispatch(primeProduct(item));
+    if (who === "customers") dispatch(primeCustomer(item));
+    if (who === "expenses")  dispatch(primeExpense(item));
+    if (who === "orders") {
+      queryClient.prefetchQuery({
+        queryKey: ["order-detail", item._id],
+        queryFn: () => api.get(`/api/orders/${item._id}`).then((r) => r.data),
+        staleTime: 30 * 1000,
+      });
+    }
+  };
 
   const totalPages = Math.ceil(total / limit);
   const colSpan = header.length + (who === "ledger" ? 0 : 1);
@@ -51,6 +83,11 @@ const Mytable = ({
                 <tr
                   key={item._id}
                   onClick={who === "orders" ? () => navigate(`details/${item._id}`) : undefined}
+                  onMouseEnter={who === "orders" ? () => queryClient.prefetchQuery({
+                    queryKey: ["order-detail", item._id],
+                    queryFn: () => api.get(`/api/orders/${item._id}`).then((r) => r.data),
+                    staleTime: 30 * 1000,
+                  }) : undefined}
                   style={{
                     cursor: who === "orders" ? "pointer" : "default",
                     background:
@@ -85,6 +122,7 @@ const Mytable = ({
                         <button
                           className="btn btn-outline"
                           style={{ padding: "6px 14px", fontSize: "0.8rem" }}
+                          onMouseEnter={() => prefetchForEdit(item)}
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/${who}/${item._id}`);
@@ -139,20 +177,24 @@ const Mytable = ({
             <ChevronLeft size={16} />
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <button
-              key={n}
-              onClick={() => onPageChange(n)}
-              className="btn"
-              style={
-                page === n
-                  ? { background: "var(--rose-deep)", color: "white", padding: "6px 13px" }
-                  : { background: "var(--rose-light)", color: "var(--rose-deep)", padding: "6px 13px" }
-              }
-            >
-              {n}
-            </button>
-          ))}
+          {getPageNumbers(page, totalPages).map((n, i) =>
+            n === "..." ? (
+              <span key={`dots-${i}`} style={{ padding: "0 4px", color: "var(--text-muted)", fontSize: 13 }}>…</span>
+            ) : (
+              <button
+                key={n}
+                onClick={() => onPageChange(n)}
+                className="btn"
+                style={
+                  page === n
+                    ? { background: "var(--rose-deep)", color: "white", padding: "6px 13px" }
+                    : { background: "var(--rose-light)", color: "var(--rose-deep)", padding: "6px 13px" }
+                }
+              >
+                {n}
+              </button>
+            )
+          )}
 
           <button
             onClick={() => onPageChange(page + 1)}

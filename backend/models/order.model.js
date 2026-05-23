@@ -31,6 +31,10 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    delivery: {
+      type: Number,
+      default: 0,
+    },
     totalAmount: {
       type: Number,
       default: 0,
@@ -38,6 +42,13 @@ const orderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+orderSchema.index({ orderDate: -1 });
+orderSchema.index({ sentDate: -1 });
+orderSchema.index({ recieveDate: -1 });
+orderSchema.index({ status: 1 });
+orderSchema.index({ paymentMode: 1 });
+orderSchema.index({ customerId: 1 });
 
 const Order = mongoose.model("Order", orderSchema);
 

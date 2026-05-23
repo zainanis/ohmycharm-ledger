@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 
 const connectDB = () => {
   mongoose
-    .connect(process.env.MONGO_URI)
+    .connect(process.env.MONGO_URI, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    })
     .then(() => {
       console.log("Connected to mongodb");
     })
