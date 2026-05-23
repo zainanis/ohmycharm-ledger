@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
 import Modal from "../utils/Modal";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { primeProduct } from "../../state/productsSlice";
 import { Package } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -11,6 +13,7 @@ const STATUS_CONFIG = {
 
 const ProductCard = ({ _id, name, price, description, status }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showModal, setShowModal] = useState(false);
   const sc = STATUS_CONFIG[status] || {
     bg: "var(--rose-light)",
@@ -107,6 +110,7 @@ const ProductCard = ({ _id, name, price, description, status }) => {
         <button
           className="btn btn-outline flex-1 justify-center"
           style={{ padding: "7px 12px" }}
+          onMouseEnter={() => dispatch(primeProduct({ _id, name, price, description, status }))}
           onClick={() => navigate(`/products/${_id}`)}
         >
           Edit

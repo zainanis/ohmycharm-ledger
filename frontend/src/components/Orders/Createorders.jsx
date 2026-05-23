@@ -1,57 +1,83 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../../utils/client.js";
 import { useNavigate, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  ArrowLeft, User, Tag, Calendar, CreditCard, Percent,
-  Package, Plus, X, Loader2, ShoppingBag,
+  ArrowLeft,
+  User,
+  Tag,
+  Calendar,
+  CreditCard,
+  Percent,
+  Package,
+  Plus,
+  X,
+  Loader2,
+  ShoppingBag,
 } from "lucide-react";
-import { setCustomers } from "../../state/customerSlice";
-import { setProducts } from "../../state/productsSlice";
+import { setCustomers, primeCustomer } from "../../state/customerSlice";
+import { setProducts, primeProduct } from "../../state/productsSlice";
 import { addOrder, updateOrder } from "../../state/orderSlice";
 import { queryClient } from "../../main.jsx";
 
 const ORDER_STATUSES = [
-  { value: "Placed",      color: "#2563eb" },
+  { value: "Placed", color: "#2563eb" },
   { value: "In Progress", color: "#d97706" },
-  { value: "Sent",        color: "#7c3aed" },
-  { value: "Delivered",   color: "#16a34a" },
+  { value: "Sent", color: "#7c3aed" },
+  { value: "Delivered", color: "#16a34a" },
 ];
 
 const PAYMENT_MODES = [
-  { value: "Cash",   color: "#16a34a" },
+  { value: "Cash", color: "#16a34a" },
   { value: "Online", color: "#0369a1" },
 ];
 
 const Createorders = () => {
   const { id } = useParams();
-  const dispatch  = useDispatch();
-  const navigate  = useNavigate();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const allCustomers = useSelector((state) => state.customers.allCustomers);
-  const allProducts  = useSelector((state) => state.products.allProducts);
+  const allProducts = useSelector((state) => state.products.allProducts);
 
-  const [submitting,        setSubmitting]        = useState(false);
-  const [initialLoading,    setInitialLoading]    = useState(true);
-  const [customerId,        setCustomerId]        = useState("");
-  const [orderStatus,       setOrderStatus]       = useState("");
-  const [orderDate,         setOrderDate]         = useState("");
-  const [sentDate,          setSentDate]          = useState("");
-  const [recieveDate,       setRecieveDate]       = useState("");
-  const [selectedProducts,  setSelectedProducts]  = useState([]);
-  const [paymentMode,       setPaymentMode]       = useState("");
-  const [discount,          setDiscount]          = useState(0);
-  const [productSearch,     setProductSearch]     = useState("");
-  const [validationError,   setValidationError]   = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [customerId, setCustomerId] = useState("");
+  const [orderStatus, setOrderStatus] = useState("");
+  const [orderDate, setOrderDate] = useState("");
+  const [sentDate, setSentDate] = useState("");
+  const [recieveDate, setRecieveDate] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [paymentMode, setPaymentMode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [productSearch, setProductSearch] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [customerApiResults, setCustomerApiResults] = useState([]);
+  const [productApiResults, setProductApiResults] = useState([]);
+  const [validationError, setValidationError] = useState("");
+  const customerApiTimer = useRef(null);
+  const productApiTimer = useRef(null);
 
   useEffect(() => {
     // only fetch what the form actually needs: customers for dropdown, products for search
     const dropdownFetches = [];
-    if (allCustomers.length === 0) dropdownFetches.push(api.get("/api/customers").then((r) => dispatch(setCustomers(r.data.data))));
-    if (allProducts.length === 0)  dropdownFetches.push(api.get("/api/products").then((r) => dispatch(setProducts(r.data.data))));
+    if (allCustomers.length === 0)
+      dropdownFetches.push(
+        api
+          .get("/api/customers", { params: { limit: 9999 } })
+          .then((r) => dispatch(setCustomers(r.data.data))),
+      );
+    if (allProducts.length === 0)
+      dropdownFetches.push(
+        api
+          .get("/api/products", { params: { limit: 9999 } })
+          .then((r) => dispatch(setProducts(r.data.data))),
+      );
 
     if (!id) {
-      Promise.all(dropdownFetches).catch(console.error).finally(() => setInitialLoading(false));
+      Promise.all(dropdownFetches)
+        .catch(console.error)
+        .finally(() => setInitialLoading(false));
     } else {
       const cached = queryClient.getQueryData(["order-detail", id]);
       const orderDetailPromise = cached
@@ -59,11 +85,18 @@ const Createorders = () => {
         : api.get(`/api/orders/${id}`).then((r) => r.data);
 
       // dropdowns and order detail run fully in parallel
-      Promise.all([Promise.all(dropdownFetches).catch(console.error), orderDetailPromise])
+      Promise.all([
+        Promise.all(dropdownFetches).catch(console.error),
+        orderDetailPromise,
+      ])
         .then(([, orderData]) => {
-          const order    = orderData.order;
+          const order = orderData.order;
           const products = orderData.products;
           // customerId may be a populated object or a plain ID string
+          if (order.customerId && typeof order.customerId === "object") {
+            dispatch(primeCustomer(order.customerId));
+            setCustomerSearch(order.customerId.name || "");
+          }
           setCustomerId(order.customerId?._id || order.customerId || "");
           setOrderStatus(order.status || "");
           setOrderDate(order.orderDate?.slice(0, 10) || "");
@@ -74,11 +107,11 @@ const Createorders = () => {
           // use product data from the response directly — avoids stale Redux closure
           setSelectedProducts(
             products.map((op) => ({
-              _id:      op.productId._id,
-              name:     op.productId.name,
-              price:    op.productId.price,
+              _id: op.productId._id,
+              name: op.productId.name,
+              price: op.productId.price,
               quantity: op.quantity || 1,
-            }))
+            })),
           );
         })
         .catch(console.error)
@@ -86,8 +119,42 @@ const Createorders = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!customerSearch.trim() || customerSearch === allCustomers.find((c) => c._id === customerId)?.name) {
+      setCustomerApiResults([]);
+      return;
+    }
+    const localHits = allCustomers.filter((c) =>
+      c.name.toLowerCase().includes(customerSearch.toLowerCase())
+    );
+    if (localHits.length > 0) { setCustomerApiResults([]); return; }
+    clearTimeout(customerApiTimer.current);
+    customerApiTimer.current = setTimeout(() => {
+      api.get("/api/customers", { params: { search: customerSearch.trim(), limit: 6 } })
+        .then((r) => setCustomerApiResults(r.data.data || []))
+        .catch(() => setCustomerApiResults([]));
+    }, 300);
+  }, [customerSearch]);
+
+  useEffect(() => {
+    if (!productSearch.trim()) { setProductApiResults([]); return; }
+    const localHits = allProducts.filter(
+      (p) =>
+        !selectedProducts.some((s) => s._id === p._id) &&
+        p.name.toLowerCase().includes(productSearch.toLowerCase())
+    );
+    if (localHits.length > 0) { setProductApiResults([]); return; }
+    clearTimeout(productApiTimer.current);
+    productApiTimer.current = setTimeout(() => {
+      api.get("/api/products", { params: { search: productSearch.trim(), limit: 6 } })
+        .then((r) => setProductApiResults(r.data.data || []))
+        .catch(() => setProductApiResults([]));
+    }, 300);
+  }, [productSearch, selectedProducts]);
+
   const subtotal = selectedProducts.reduce(
-    (sum, p) => sum + (p.price || 0) * (p.quantity || 1), 0
+    (sum, p) => sum + (p.price || 0) * (p.quantity || 1),
+    0,
   );
   const total = Math.max(0, subtotal - Number(discount));
 
@@ -104,7 +171,11 @@ const Createorders = () => {
 
   const updateQty = (productId, qty) => {
     setSelectedProducts((prev) =>
-      prev.map((p) => p._id === productId ? { ...p, quantity: qty === "" ? "" : parseInt(qty) } : p)
+      prev.map((p) =>
+        p._id === productId
+          ? { ...p, quantity: qty === "" ? "" : parseInt(qty) }
+          : p,
+      ),
     );
   };
 
@@ -112,24 +183,46 @@ const Createorders = () => {
     e.preventDefault();
     setValidationError("");
 
+    if (!customerId) return setValidationError("Please select a customer.");
     if (!orderDate) return setValidationError("Order Date is required.");
-    if ((recieveDate || orderStatus === "Sent" || orderStatus === "Delivered") && !sentDate)
-      return setValidationError("Sent Date is required when order is Sent or Delivered.");
+    if (
+      (recieveDate || orderStatus === "Sent" || orderStatus === "Delivered") &&
+      !sentDate
+    )
+      return setValidationError(
+        "Sent Date is required when order is Sent or Delivered.",
+      );
     if (orderStatus === "Delivered" && !recieveDate)
-      return setValidationError("Receive Date is required for Delivered orders.");
+      return setValidationError(
+        "Receive Date is required for Delivered orders.",
+      );
 
     const products = selectedProducts.map((p) => ({
       _id: p._id,
       quantity: Math.max(1, Number(p.quantity)),
     }));
-    const order = { customerId, status: orderStatus, orderDate, sentDate: sentDate || undefined, recieveDate: recieveDate || undefined, paymentMode, products, discount };
+    const order = {
+      customerId,
+      status: orderStatus,
+      orderDate,
+      sentDate: sentDate || undefined,
+      recieveDate: recieveDate || undefined,
+      paymentMode,
+      products,
+      discount,
+    };
     const selectedCustomer = allCustomers.find((c) => c._id === customerId);
-    const request = id ? api.put(`/api/orders/${id}`, order) : api.post("/api/orders", order);
+    const request = id
+      ? api.put(`/api/orders/${id}`, order)
+      : api.post("/api/orders", order);
     setSubmitting(true);
     request
       .then((res) => {
         const orderRes = id ? res.data : res.data.order;
-        orderRes.customerId = { _id: customerId, name: selectedCustomer?.name || "" };
+        orderRes.customerId = {
+          _id: customerId,
+          name: selectedCustomer?.name || "",
+        };
         dispatch(id ? updateOrder(orderRes) : addOrder(orderRes));
         queryClient.invalidateQueries({ queryKey: ["orders"] });
         queryClient.invalidateQueries({ queryKey: ["ledger"] });
@@ -142,10 +235,17 @@ const Createorders = () => {
   const filteredProducts = allProducts
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name))
-    .filter((p) =>
-      !selectedProducts.some((s) => s._id === p._id) &&
-      p.name.toLowerCase().includes(productSearch.toLowerCase())
+    .filter(
+      (p) =>
+        !selectedProducts.some((s) => s._id === p._id) &&
+        p.name.toLowerCase().includes(productSearch.toLowerCase()),
     );
+
+  const selectedCustomer = allCustomers.find((c) => c._id === customerId);
+  const filteredCustomers = allCustomers
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .filter((c) => c.name.toLowerCase().includes(customerSearch.toLowerCase()));
 
   return (
     <div className="page-card">
@@ -161,21 +261,25 @@ const Createorders = () => {
           </button>
           <h1 className="page-title">{id ? "Edit" : "New"} Order</h1>
         </div>
-        {!initialLoading && (
+        {/* {!initialLoading && (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             Total:{" "}
             <span className="font-semibold" style={{ color: "var(--rose-deep)", fontFamily: "'Cormorant Garamond', serif", fontSize: "1.1rem" }}>
               {total.toLocaleString()} PKR
             </span>
           </p>
-        )}
+        )} */}
       </div>
 
       <div className="page-body">
         {initialLoading ? (
           <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton rounded-xl" style={{ height: 52 }} />
+              <div
+                key={i}
+                className="skeleton rounded-xl"
+                style={{ height: 52 }}
+              />
             ))}
           </div>
         ) : (
@@ -187,17 +291,43 @@ const Createorders = () => {
                 <Section title="Order Details" icon={<ShoppingBag size={15} />}>
                   <div className="form-grid-2">
                     <Field label="Customer" icon={<User size={14} />} required>
-                      <select
-                        className="form-control"
-                        value={customerId}
-                        onChange={(e) => setCustomerId(e.target.value)}
-                        required
-                      >
-                        <option value="">Select a customer…</option>
-                        {allCustomers.map((c) => (
-                          <option key={c._id} value={c._id}>{c.name}</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <input
+                          className="form-control w-full"
+                          placeholder="Search customers…"
+                          value={customerSearch}
+                          onChange={(e) => {
+                            setCustomerSearch(e.target.value);
+                            if (customerId) setCustomerId("");
+                          }}
+                          autoComplete="off"
+                        />
+                        {customerSearch && customerSearch !== selectedCustomer?.name && (filteredCustomers.length > 0 || customerApiResults.length > 0) && (
+                          <div
+                            className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl overflow-hidden z-20"
+                            style={{ boxShadow: "var(--shadow-lg)", border: "1px solid var(--border)" }}
+                          >
+                            {(filteredCustomers.length > 0 ? filteredCustomers.slice(0, 6) : customerApiResults).map((c) => (
+                              <button
+                                key={c._id}
+                                type="button"
+                                className="w-full flex items-center px-4 py-2.5 text-sm text-left transition-colors"
+                                style={{ color: "var(--text-primary)" }}
+                                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--rose-light)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.background = "")}
+                                onClick={() => {
+                                  dispatch(primeCustomer(c));
+                                  setCustomerId(c._id);
+                                  setCustomerSearch(c.name);
+                                  setCustomerApiResults([]);
+                                }}
+                              >
+                                {c.name}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </Field>
 
                     <Field label="Payment Mode" icon={<CreditCard size={14} />}>
@@ -293,8 +423,14 @@ const Createorders = () => {
                     className="btn btn-primary flex-1 justify-center"
                     disabled={submitting}
                   >
-                    {submitting ? <Loader2 size={16} className="animate-spin" /> : null}
-                    {submitting ? "Saving…" : id ? "Update Order" : "Create Order"}
+                    {submitting ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : null}
+                    {submitting
+                      ? "Saving…"
+                      : id
+                        ? "Update Order"
+                        : "Create Order"}
                   </button>
                 </div>
               </div>
@@ -302,16 +438,26 @@ const Createorders = () => {
               {/* RIGHT: Products panel */}
               <div
                 className="flex flex-col gap-4 rounded-2xl p-5"
-                style={{ border: "1px solid var(--border-light)", background: "white", boxShadow: "var(--shadow-sm)" }}
+                style={{
+                  border: "1px solid var(--border-light)",
+                  background: "white",
+                  boxShadow: "var(--shadow-sm)",
+                }}
               >
                 <div className="flex items-center gap-2">
                   <Package size={15} style={{ color: "var(--rose-deep)" }} />
-                  <h3 className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
+                  <h3
+                    className="font-semibold text-sm"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Products
                   </h3>
                   <span
                     className="ml-auto text-xs px-2 py-0.5 rounded-full font-medium"
-                    style={{ background: "var(--rose-light)", color: "var(--rose-deep)" }}
+                    style={{
+                      background: "var(--rose-light)",
+                      color: "var(--rose-deep)",
+                    }}
                   >
                     {selectedProducts.length} selected
                   </span>
@@ -325,23 +471,45 @@ const Createorders = () => {
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
                   />
-                  {productSearch && filteredProducts.length > 0 && (
+                  {productSearch && (filteredProducts.length > 0 || productApiResults.length > 0) && (
                     <div
                       className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl overflow-hidden z-20"
-                      style={{ boxShadow: "var(--shadow-lg)", border: "1px solid var(--border)" }}
+                      style={{
+                        boxShadow: "var(--shadow-lg)",
+                        border: "1px solid var(--border)",
+                      }}
                     >
-                      {filteredProducts.slice(0, 6).map((p) => (
+                      {(filteredProducts.length > 0 ? filteredProducts.slice(0, 6) : productApiResults).map((p) => (
                         <button
                           key={p._id}
                           type="button"
                           className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left transition-colors"
                           style={{ color: "var(--text-primary)" }}
-                          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--rose-light)")}
-                          onMouseLeave={(e) => (e.currentTarget.style.background = "")}
-                          onClick={() => addProduct(p._id)}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background =
+                              "var(--rose-light)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "")
+                          }
+                          onClick={() => {
+                            if (filteredProducts.length > 0) {
+                              addProduct(p._id);
+                            } else {
+                              dispatch(primeProduct(p));
+                              if (!selectedProducts.some((s) => s._id === p._id)) {
+                                setSelectedProducts((prev) => [...prev, { ...p, quantity: 1 }]);
+                              }
+                              setProductSearch("");
+                              setProductApiResults([]);
+                            }
+                          }}
                         >
                           <span>{p.name}</span>
-                          <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             {p.price?.toLocaleString()} PKR
                           </span>
                         </button>
@@ -351,9 +519,15 @@ const Createorders = () => {
                 </div>
 
                 {/* Selected products list */}
-                <div className="flex flex-col gap-2 flex-1 overflow-y-auto" style={{ maxHeight: 320 }}>
+                <div
+                  className="flex flex-col gap-2 flex-1 overflow-y-auto"
+                  style={{ maxHeight: 320 }}
+                >
                   {selectedProducts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 gap-2" style={{ color: "var(--text-muted)" }}>
+                    <div
+                      className="flex flex-col items-center justify-center py-8 gap-2"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       <Package size={28} strokeWidth={1.2} />
                       <span className="text-xs">No products added yet</span>
                     </div>
@@ -365,8 +539,16 @@ const Createorders = () => {
                         style={{ border: "1px solid var(--border)" }}
                       >
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{p.name}</p>
-                          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          <p
+                            className="text-sm font-medium truncate"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            {p.name}
+                          </p>
+                          <p
+                            className="text-xs"
+                            style={{ color: "var(--text-muted)" }}
+                          >
                             {(p.price * (p.quantity || 1)).toLocaleString()} PKR
                           </p>
                         </div>
@@ -374,8 +556,16 @@ const Createorders = () => {
                           <button
                             type="button"
                             className="w-7 h-7 rounded-lg flex items-center justify-center text-lg font-bold transition-colors"
-                            style={{ background: "var(--rose-light)", color: "var(--rose-deep)" }}
-                            onClick={() => updateQty(p._id, Math.max(1, (p.quantity || 1) - 1))}
+                            style={{
+                              background: "var(--rose-light)",
+                              color: "var(--rose-deep)",
+                            }}
+                            onClick={() =>
+                              updateQty(
+                                p._id,
+                                Math.max(1, (p.quantity || 1) - 1),
+                              )
+                            }
                           >
                             −
                           </button>
@@ -385,13 +575,22 @@ const Createorders = () => {
                             value={p.quantity ?? 1}
                             onChange={(e) => updateQty(p._id, e.target.value)}
                             className="w-12 text-center text-sm font-medium rounded-lg border"
-                            style={{ border: "1px solid var(--border)", padding: "4px 0", color: "var(--text-primary)" }}
+                            style={{
+                              border: "1px solid var(--border)",
+                              padding: "4px 0",
+                              color: "var(--text-primary)",
+                            }}
                           />
                           <button
                             type="button"
                             className="w-7 h-7 rounded-lg flex items-center justify-center text-lg font-bold transition-colors"
-                            style={{ background: "var(--rose-light)", color: "var(--rose-deep)" }}
-                            onClick={() => updateQty(p._id, (p.quantity || 1) + 1)}
+                            style={{
+                              background: "var(--rose-light)",
+                              color: "var(--rose-deep)",
+                            }}
+                            onClick={() =>
+                              updateQty(p._id, (p.quantity || 1) + 1)
+                            }
                           >
                             +
                           </button>
@@ -413,19 +612,36 @@ const Createorders = () => {
                 {selectedProducts.length > 0 && (
                   <div
                     className="rounded-xl px-4 py-3 flex flex-col gap-1"
-                    style={{ background: "var(--cream)", border: "1px solid var(--border)" }}
+                    style={{
+                      background: "var(--cream)",
+                      border: "1px solid var(--border)",
+                    }}
                   >
-                    <div className="flex justify-between text-sm" style={{ color: "var(--text-muted)" }}>
+                    <div
+                      className="flex justify-between text-sm"
+                      style={{ color: "var(--text-muted)" }}
+                    >
                       <span>Subtotal</span>
                       <span>{subtotal.toLocaleString()} PKR</span>
                     </div>
                     {Number(discount) > 0 && (
-                      <div className="flex justify-between text-sm" style={{ color: "#dc2626" }}>
+                      <div
+                        className="flex justify-between text-sm"
+                        style={{ color: "#dc2626" }}
+                      >
                         <span>Discount</span>
                         <span>− {Number(discount).toLocaleString()} PKR</span>
                       </div>
                     )}
-                    <div className="flex justify-between font-semibold pt-1" style={{ borderTop: "1px solid var(--border)", color: "var(--rose-deep)", fontFamily: "'Cormorant Garamond', serif", fontSize: "1.1rem" }}>
+                    <div
+                      className="flex justify-between font-semibold pt-1"
+                      style={{
+                        borderTop: "1px solid var(--border)",
+                        color: "var(--rose-deep)",
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontSize: "1.1rem",
+                      }}
+                    >
                       <span>Total</span>
                       <span>{total.toLocaleString()} PKR</span>
                     </div>
@@ -445,9 +661,17 @@ const Section = ({ title, icon, children }) => (
     className="flex flex-col gap-4 rounded-2xl p-5"
     style={{ border: "1px solid var(--border-light)", background: "white" }}
   >
-    <div className="flex items-center gap-2 pb-1" style={{ borderBottom: "1px solid var(--border-light)" }}>
+    <div
+      className="flex items-center gap-2 pb-1"
+      style={{ borderBottom: "1px solid var(--border-light)" }}
+    >
       <span style={{ color: "var(--rose-deep)" }}>{icon}</span>
-      <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</h3>
+      <h3
+        className="text-sm font-semibold"
+        style={{ color: "var(--text-primary)" }}
+      >
+        {title}
+      </h3>
     </div>
     {children}
   </div>
@@ -455,7 +679,10 @@ const Section = ({ title, icon, children }) => (
 
 const Field = ({ label, icon, required, children }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-sm font-medium flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
+    <label
+      className="text-sm font-medium flex items-center gap-1.5"
+      style={{ color: "var(--text-primary)" }}
+    >
       {icon && <span style={{ color: "var(--text-muted)" }}>{icon}</span>}
       {label}
       {required && <span style={{ color: "var(--rose-deep)" }}>*</span>}
@@ -474,8 +701,18 @@ const RadioCard = ({ opt, selected, onSelect, name }) => (
       whiteSpace: "nowrap",
     }}
   >
-    <input type="radio" name={name} value={opt.value} checked={selected} onChange={onSelect} className="sr-only" />
-    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: opt.color }} />
+    <input
+      type="radio"
+      name={name}
+      value={opt.value}
+      checked={selected}
+      onChange={onSelect}
+      className="sr-only"
+    />
+    <span
+      className="w-2 h-2 rounded-full shrink-0"
+      style={{ background: opt.color }}
+    />
     {opt.value}
   </label>
 );

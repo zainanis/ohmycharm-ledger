@@ -1,10 +1,13 @@
 import { useNavigate } from "react-router";
 import Modal from "../utils/Modal";
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { primeCustomer } from "../../state/customerSlice";
 import { User, Phone, MapPin, Mail } from "lucide-react";
 
 const Customercard = ({ _id, name, phoneNumber, address, email }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showModal, setShowModal] = useState(false);
 
   const initials = name
@@ -88,6 +91,7 @@ const Customercard = ({ _id, name, phoneNumber, address, email }) => {
         <button
           className="btn btn-outline flex-1 justify-center"
           style={{ padding: "7px 12px" }}
+          onMouseEnter={() => dispatch(primeCustomer({ _id, name, phoneNumber, address, email }))}
           onClick={() => navigate(`/customers/${_id}`)}
         >
           Edit
